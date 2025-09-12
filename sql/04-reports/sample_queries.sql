@@ -385,4 +385,24 @@ UNION ALL
 
 SELECT 
     'Outstanding AR Balance',
-    ROUND(SUM(
+    ROUND(SUM(i.total - COALESCE(p.amount, 0)), 0)
+FROM invoices i
+LEFT JOIN (
+    SELECT invoice_id, SUM(amount) as amount 
+    FROM payments 
+    GROUP BY invoice_id
+) p ON i.invoice_id = p.invoice_id
+WHERE i.total > COALESCE(p.amount, 0)
+
+UNION ALL
+
+SELECT 
+    'Average Order Value (90 days)',
+    ROUND(AVG(order_value), 2)
+FROM (
+    SELECT SUM(oi.qty * oi.unit_price - oi.discount) as order_value
+    FROM orders o
+    JOIN order_items oi ON o.order_id = oi.order_id
+    WHERE o.order_ts >= DATE_SUB(CURDATE(), INTERVAL 90 DAY)
+    GROUP BY o.order_id
+) order_values;
