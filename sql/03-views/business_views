@@ -1,0 +1,228 @@
+-- =============================================
+-- O2C ESSENTIAL BUSINESS VIEWS  
+-- Pre-built analytical views for instant business insights
+-- Each view optimized for specific business analysis needs
+-- =============================================
+
+USE `o2c`;
+
+-- 1. ORDER SUMMARY VIEW
+-- Provides complete order information with customer and financial details
+CREATE OR REPLACE VIEW vw_order_summary AS
+SELECT 
+    o.order_id,
+    o.order_ts,
+    c.name AS customer_name,
+    c.segment AS customer_segment,
+    c.region,
+    c.payment_terms,
+    o.status AS order_status,
+    o.channel,
+    o.requested_ship_date,
+    COUNT(oi.product_id) AS line_items,
+    SUM(oi.qty) AS total_qty,
+    SUM(oi.qty * oi.unit_price) AS gross_amount,
+    SUM(oi.discount) AS total_discount,
+    SUM(oi.tax) AS total_tax,
+    SUM(oi.qty * oi.unit_price - oi.discount) AS net_amount,
+    -- Calculate order profitability
+    SUM(oi.qty * (oi.unit_price - p.unit_cost)) AS gross_profit,
+    ROUND(
+        SUM(oi.qty * (oi.unit_price - p.unit_cost)) / 
+        NULLIF(SUM(oi.qty * oi.unit_price), 0) * 100, 2
+    ) AS gross_margin_pct
+FROM orders o
+JOIN customers c ON o.customer_id = c.customer_id
+JOIN order_items oi ON o.order_id = oi.order_id
+JOIN products p ON oi.product_id = p.product_id
+GROUP BY o.order_id, o.order_ts, c.name, c.segment, c.region, 
+         c.payment_terms, o.status, o.channel, o.requested_ship_date;
+
+-- 2. CUSTOMER ANALYTICS VIEW
+-- Customer performance metrics and lifecycle analysis
+CREATE OR REPLACE VIEW vw_customer_analytics AS
+SELECT 
+    c.customer_id,
+    c.name AS customer_name,
+    c.segment,
+    c.region,
+    c.payment_terms,
+    c.credit_limit,
+    -- Order metrics
+    COUNT(DISTINCT o.order_id) AS total_orders,
+    COALESCE(SUM(oi.qty * oi.unit_price - oi.discount), 0) AS total_revenue,
+    COALESCE(AVG(oi.qty * oi.unit_price - oi.discount), 0) AS avg_order_value,
+    -- Profitability
+    COALESCE(SUM(oi.qty * (oi.unit_price - p.unit_cost)), 0) AS total_gross_profit,
+    -- Timing metrics
+    MIN(o.order_ts) AS first_order_date,
+    MAX(o.order_ts) AS last_order_date,
+    DATEDIFF(MAX(o.order_ts), MIN(o.order_ts)) AS customer_lifetime_days,
+    -- Payment behavior
+    AVG(DATEDIFF(pay.payment_ts, inv.due_date)) AS avg_payment_delay_days,
+    -- Return behavior
+    COALESCE(COUNT(DISTINCT ret.return_id), 0) AS total_returns,
+    COALESCE(SUM(ret.refund_amount), 0) AS total_refunds
+FROM customers c
+LEFT JOIN orders o ON c.customer_id = o.customer_id
+LEFT JOIN order_items oi ON o.order_id = oi.order_id
+LEFT JOIN products p ON oi.product_id = p.product_id
+LEFT JOIN invoices inv ON o.order_id = inv.order_id
+LEFT JOIN payments pay ON inv.invoice_id = pay.invoice_id
+LEFT JOIN returns ret ON o.order_id = ret.order_id
+GROUP BY c.customer_id, c.name, c.segment, c.region, c.payment_terms, c.credit_limit;
+
+-- 3. PRODUCT PERFORMANCE VIEW
+-- Product sales performance and inventory analysis
+CREATE OR REPLACE VIEW vw_product_performance AS
+SELECT 
+    p.product_id,
+    p.sku,
+    p.category,
+    p.unit_cost,
+    p.list_price,
+    p.safety_stock,
+    -- Inventory status
+    i.on_hand_qty,
+    i.reserved_qty,
+    (i.on_hand_qty - i.reserved_qty) AS available_qty,
+    -- Sales performance
+    COALESCE(COUNT(DISTINCT oi.order_id), 0) AS orders_count,
+    COALESCE(SUM(oi.qty), 0) AS total_qty_sold,
+    COALESCE(SUM(oi.qty * oi.unit_price), 0) AS gross_revenue,
+    COALESCE(SUM(oi.discount), 0) AS total_discounts,
+    COALESCE(SUM(oi.qty * oi.unit_price - oi.discount), 0) AS net_revenue,
+    COALESCE(SUM(oi.qty * (oi.unit_price - p.unit_cost)), 0) AS gross_profit,
+    -- Profitability metrics
+    CASE 
+        WHEN SUM(oi.qty * oi.unit_price) > 0 
+        THEN ROUND(SUM(oi.qty * (oi.unit_price - p.unit_cost)) / SUM(oi.qty * oi.unit_price) * 100, 2)
+        ELSE NULL 
+    END AS gross_margin_pct,
+    -- Inventory turnover (approximation)
+    CASE 
+        WHEN i.on_hand_qty > 0 
+        THEN ROUND(COALESCE(SUM(oi.qty), 0) / i.on_hand_qty, 2)
+        ELSE NULL 
+    END AS turnover_ratio,
+    -- Return analysis
+    COALESCE(SUM(ret.qty), 0) AS total_returns,
+    CASE 
+        WHEN SUM(oi.qty) > 0 
+        THEN ROUND(COALESCE(SUM(ret.qty), 0) / SUM(oi.qty) * 100, 2)
+        ELSE 0 
+    END AS return_rate_pct
+FROM products p
+LEFT JOIN inventory i ON p.product_id = i.product_id
+LEFT JOIN order_items oi ON p.product_id = oi.product_id
+LEFT JOIN returns ret ON p.product_id = ret.product_id
+GROUP BY p.product_id, p.sku, p.category, p.unit_cost, p.list_price, 
+         p.safety_stock, i.on_hand_qty, i.reserved_qty;
+
+-- 4. CASH FLOW ANALYSIS VIEW
+-- Invoice and payment tracking for cash flow management
+CREATE OR REPLACE VIEW vw_cash_flow_analysis AS
+SELECT 
+    inv.invoice_id,
+    inv.order_id,
+    o.customer_id,
+    c.name AS customer_name,
+    c.segment AS customer_segment,
+    c.payment_terms,
+    inv.invoice_ts,
+    inv.due_date,
+    inv.total AS invoice_amount,
+    COALESCE(SUM(pay.amount), 0) AS paid_amount,
+    (inv.total - COALESCE(SUM(pay.amount), 0)) AS outstanding_amount,
+    -- Payment status
+    CASE 
+        WHEN COALESCE(SUM(pay.amount), 0) >= inv.total THEN 'PAID'
+        WHEN COALESCE(SUM(pay.amount), 0) > 0 THEN 'PARTIAL'
+        ELSE 'UNPAID'
+    END AS payment_status,
+    -- Days calculations
+    DATEDIFF(CURDATE(), inv.due_date) AS days_past_due,
+    CASE 
+        WHEN MAX(pay.payment_ts) IS NOT NULL 
+        THEN DATEDIFF(MAX(pay.payment_ts), inv.due_date)
+        ELSE NULL 
+    END AS payment_delay_days,
+    -- Aging bucket
+    CASE 
+        WHEN DATEDIFF(CURDATE(), inv.due_date) <= 0 THEN 'Current'
+        WHEN DATEDIFF(CURDATE(), inv.due_date) <= 30 THEN '1-30 Days'
+        WHEN DATEDIFF(CURDATE(), inv.due_date) <= 60 THEN '31-60 Days'
+        WHEN DATEDIFF(CURDATE(), inv.due_date) <= 90 THEN '61-90 Days'
+        ELSE '90+ Days'
+    END AS aging_bucket
+FROM invoices inv
+JOIN orders o ON inv.order_id = o.order_id
+JOIN customers c ON o.customer_id = c.customer_id
+LEFT JOIN payments pay ON inv.invoice_id = pay.invoice_id
+GROUP BY inv.invoice_id, inv.order_id, o.customer_id, c.name, c.segment, 
+         c.payment_terms, inv.invoice_ts, inv.due_date, inv.total;
+
+-- 5. OPERATIONAL PERFORMANCE VIEW
+-- End-to-end process performance metrics
+CREATE OR REPLACE VIEW vw_operational_performance AS
+SELECT 
+    o.order_id,
+    c.name AS customer_name,
+    c.segment,
+    o.channel,
+    o.order_ts,
+    o.requested_ship_date,
+    s.ship_ts,
+    s.promised_delivery_ts,
+    s.actual_delivery_ts,
+    inv.invoice_ts,
+    inv.due_date,
+    MIN(pay.payment_ts) AS first_payment_ts,
+    -- Process timing metrics (in days)
+    DATEDIFF(s.ship_ts, o.order_ts) AS order_to_ship_days,
+    DATEDIFF(s.actual_delivery_ts, s.ship_ts) AS ship_to_delivery_days,
+    DATEDIFF(s.actual_delivery_ts, o.order_ts) AS order_to_delivery_days,
+    DATEDIFF(inv.invoice_ts, s.ship_ts) AS ship_to_invoice_days,
+    DATEDIFF(MIN(pay.payment_ts), inv.invoice_ts) AS invoice_to_payment_days,
+    DATEDIFF(MIN(pay.payment_ts), o.order_ts) AS total_o2c_cycle_days,
+    -- Performance indicators
+    CASE 
+        WHEN s.actual_delivery_ts <= s.promised_delivery_ts THEN 'ON_TIME'
+        WHEN s.actual_delivery_ts IS NULL THEN 'PENDING'
+        ELSE 'LATE'
+    END AS delivery_performance,
+    CASE 
+        WHEN s.ship_ts <= o.requested_ship_date THEN 'ON_TIME'
+        WHEN s.ship_ts IS NULL THEN 'PENDING'
+        ELSE 'LATE'
+    END AS ship_performance,
+    -- Financial metrics
+    inv.total AS invoice_amount,
+    COALESCE(SUM(pay.amount), 0) AS total_paid
+FROM orders o
+JOIN customers c ON o.customer_id = c.customer_id
+LEFT JOIN shipments s ON o.order_id = s.order_id
+LEFT JOIN invoices inv ON o.order_id = inv.order_id
+LEFT JOIN payments pay ON inv.invoice_id = pay.invoice_id
+GROUP BY o.order_id, c.name, c.segment, o.channel, o.order_ts, 
+         o.requested_ship_date, s.ship_ts, s.promised_delivery_ts, 
+         s.actual_delivery_ts, inv.invoice_ts, inv.due_date, inv.total;
+
+-- =============================================
+-- SAMPLE QUERIES TO TEST THE VIEWS
+-- =============================================
+
+-- Test query 1: Order Summary
+SELECT * FROM vw_order_summary ORDER BY order_id;
+
+-- Test query 2: Customer Analytics
+SELECT * FROM vw_customer_analytics ORDER BY total_revenue DESC;
+
+-- Test query 3: Product Performance
+SELECT * FROM vw_product_performance ORDER BY net_revenue DESC;
+
+-- Test query 4: Cash Flow Analysis
+SELECT * FROM vw_cash_flow_analysis ORDER BY days_past_due DESC;
+
+-- Test query 5: Operational Performance
+SELECT * FROM vw_operational_performance ORDER BY total_o2c_cycle_days DESC;
