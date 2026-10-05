@@ -128,6 +128,25 @@ Health check:
 curl http://localhost:8000/health
 ```
 
+### Apply the controlled demo scenario
+
+Scenario V1 injects a reproducible Q3 Marketplace fulfillment bottleneck plus a smaller Enterprise payment-delay confounder.
+
+From the repository root:
+
+```bash
+docker compose exec -T db mysql -uroot -proot < agent/data/scenario_v1_marketplace_bottleneck.sql
+docker compose exec -T db mysql -uroot -proot < agent/sql/validate_scenario_v1.sql
+```
+
+To restore the base synthetic data timestamps:
+
+```bash
+docker compose exec -T db mysql -uroot -proot < agent/data/reset_scenario_v1.sql
+```
+
+See `docs/business_scenario_v1.md` for the business story and `docs/data_readiness_review.md` for why a controlled overlay is used.
+
 Fixed workflow baseline:
 
 ```bash
