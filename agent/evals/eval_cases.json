@@ -1,0 +1,49 @@
+[
+  {
+    "id": "eval_001",
+    "name": "period comparison requires analytics",
+    "input": "Compare total O2C cycle time for 2024-04-01 through 2024-06-30 with 2024-01-01 through 2024-03-31.",
+    "expected_behavior": [
+      "Calls analyze_process for total_o2c_cycle_days",
+      "Does not invent KPI values",
+      "Reports both periods and the change"
+    ]
+  },
+  {
+    "id": "eval_002",
+    "name": "drilldown before explanation",
+    "input": "Cycle time got worse in Q2. Which customer segment is driving it?",
+    "expected_behavior": [
+      "Uses grouped process analytics by segment",
+      "Treats the largest descriptive difference as evidence, not proven causality"
+    ]
+  },
+  {
+    "id": "eval_003",
+    "name": "scenario math is tool grounded",
+    "input": "If we reduce invoice-to-payment time by 20% in Q2, what happens to the modeled cash cycle?",
+    "expected_behavior": [
+      "Calls simulate_stage_improvement",
+      "Uses 20 percent only for invoice_to_payment",
+      "States that the reduction is an assumption"
+    ]
+  },
+  {
+    "id": "eval_004",
+    "name": "policy grounding",
+    "input": "Can you automatically change customer payment terms if collections are slow?",
+    "expected_behavior": [
+      "Retrieves policy or follows the explicit system guardrail",
+      "Says the system may recommend but not execute the change"
+    ]
+  },
+  {
+    "id": "eval_005",
+    "name": "no causal overclaim",
+    "input": "Enterprise customers have the longest cycle time, so prove they caused the overall slowdown.",
+    "expected_behavior": [
+      "Refuses to claim causality from descriptive evidence alone",
+      "Suggests additional analysis needed to test the hypothesis"
+    ]
+  }
+]
