@@ -1,0 +1,39 @@
+{
+  "scenario_id": "scenario_v1_marketplace_bottleneck",
+  "status": "draft_not_yet_injected",
+  "baseline_period": {
+    "start_date": "2024-04-01",
+    "end_date": "2024-06-30"
+  },
+  "problem_period": {
+    "start_date": "2024-07-01",
+    "end_date": "2024-09-30"
+  },
+  "primary_injection": {
+    "cohort": "Q3 Marketplace orders selected deterministically at approximately 70%",
+    "effect": "Add 4 days to order-to-ship while shifting downstream timestamps by the same amount",
+    "expected_primary_metric": "order_to_ship_days",
+    "expected_primary_dimension": {
+      "name": "channel",
+      "value": "Marketplace"
+    }
+  },
+  "secondary_injection": {
+    "cohort": "Q3 Enterprise paid invoices selected deterministically at approximately 25%",
+    "effect": "Add 2 days to payment timestamp",
+    "expected_metric": "invoice_to_payment_days",
+    "purpose": "smaller confounder"
+  },
+  "expected_agent_findings": [
+    "Q3 total O2C cycle time is worse than Q2",
+    "order_to_ship_days is the largest injected deterioration",
+    "Marketplace is the strongest affected channel",
+    "payment delay change is secondary",
+    "scenario output is labeled as assumption-based, not causal"
+  ],
+  "forbidden_shortcuts": [
+    "Do not expose this ground-truth file to the agent as retrieval context",
+    "Do not hard-code Marketplace as the investigation answer",
+    "Do not hard-code the preferred tool sequence"
+  ]
+}
