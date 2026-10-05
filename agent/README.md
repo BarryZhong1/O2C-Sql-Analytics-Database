@@ -103,13 +103,14 @@ agent/
 
 ## Quick start
 
-From the repository root, start the existing MySQL service first.
+From the repository root, start MySQL and load the existing O2C database:
 
 ```bash
 docker compose up -d
+docker compose exec -T db mysql -uroot -proot < sql/complete_setup.sql
 ```
 
-Then:
+Then start the agent service:
 
 ```bash
 cd agent
