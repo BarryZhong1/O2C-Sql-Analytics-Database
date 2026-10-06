@@ -12,11 +12,38 @@ services:
     volumes:
       - dbdata:/var/lib/mysql
       - ./mysql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  agent:
+    build:
+      context: ./agent
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5}
+      DATABASE_URL: mysql+pymysql://app:app_pw@db:3306/o2c
+      POLICY_PATH: policies
+      STATE_DB_PATH: /state/agent_state.db
+    ports:
+      - "8000:8000"
+    volumes:
+      - agentstate:/state
+    depends_on:
+      db:
+        condition: service_healthy
+
   adminer:
     image: adminer:latest
     ports:
       - "8080:8080"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+
 volumes:
   dbdata:
+  agentstate:
