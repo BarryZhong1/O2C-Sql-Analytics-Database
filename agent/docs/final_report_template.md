@@ -107,6 +107,16 @@ Seven behavior cases cover:
 - causal discipline;
 - human approval boundaries.
 
+The live agent also captures operational observability for each run:
+
+- end-to-end latency;
+- per-model-call latency;
+- per-tool-call latency;
+- number of model calls;
+- input, output, cached-input, reasoning, and total token usage when reported by the API.
+
+These runtime measures help discuss efficiency and operating characteristics, but they are not treated as answer-quality scores.
+
 ## 8. Final live results
 
 Paste or summarize `artifacts/evaluation_summary.md` here after running the full live suite.
@@ -119,18 +129,25 @@ Paste or summarize `artifacts/evaluation_summary.md` here after running the full
 - Deterministic trace pass rate: **[rate]**
 - Semantic rubric pass rate: **[rate]**
 - Critical semantic failures: **[none / list]**
+- Average end-to-end agent latency: **[ms]**
+- Total model calls: **[n]**
+- Input tokens: **[n]**
+- Cached input tokens: **[n]**
+- Output tokens: **[n]**
+- Reasoning tokens: **[n]**
+- Total tokens: **[n]**
 
 ### Per-case table
 
-| Case | Deterministic trace | Semantic rubric | Main observation |
-|---|---|---|---|
-| eval_001 | [PASS/FAIL] | [PASS/FAIL] | [observation] |
-| eval_002 | [PASS/FAIL] | [PASS/FAIL] | [observation] |
-| eval_003 | [PASS/FAIL] | [PASS/FAIL] | [observation] |
-| eval_004 | [PASS/FAIL] | [PASS/FAIL] | [observation] |
-| eval_005 | [PASS/FAIL] | [PASS/FAIL] | [observation] |
-| eval_006 | [PASS/FAIL] | [PASS/FAIL] | [observation] |
-| eval_007 | [PASS/FAIL] | [PASS/FAIL] | [observation] |
+| Case | Deterministic trace | Semantic rubric | Latency | Tokens | Main observation |
+|---|---|---|---:|---:|---|
+| eval_001 | [PASS/FAIL] | [PASS/FAIL] | [ms] | [tokens] | [observation] |
+| eval_002 | [PASS/FAIL] | [PASS/FAIL] | [ms] | [tokens] | [observation] |
+| eval_003 | [PASS/FAIL] | [PASS/FAIL] | [ms] | [tokens] | [observation] |
+| eval_004 | [PASS/FAIL] | [PASS/FAIL] | [ms] | [tokens] | [observation] |
+| eval_005 | [PASS/FAIL] | [PASS/FAIL] | [ms] | [tokens] | [observation] |
+| eval_006 | [PASS/FAIL] | [PASS/FAIL] | [ms] | [tokens] | [observation] |
+| eval_007 | [PASS/FAIL] | [PASS/FAIL] | [ms] | [tokens] | [observation] |
 
 ## 9. Failure analysis and iteration
 
@@ -154,8 +171,12 @@ Document:
 - MySQL health check;
 - FastAPI health endpoint;
 - analyst UI smoke test;
-- tool trace returned with agent responses;
+- tool trace with arguments, deterministic results, and tool latency;
+- model-response trace with response lineage, latency, and usage metadata;
+- aggregated runtime metrics in the generated evaluation summary;
 - evaluation artifacts uploaded by GitHub Actions.
+
+The observability trace intentionally avoids storing another copy of prompt/answer content inside each model-call metadata entry.
 
 ## 11. Limitations
 
@@ -167,7 +188,8 @@ Suggested limitations to discuss accurately:
 - local SQLite state store rather than production multi-user state service;
 - no authentication/authorization in the portfolio UI;
 - no automatic operational execution;
-- semantic judge is model-based and therefore advisory rather than ground truth.
+- semantic judge is model-based and therefore advisory rather than ground truth;
+- token/latency measurements reflect the tested model and environment rather than a universal production SLA.
 
 ## 12. Future work
 
@@ -177,7 +199,7 @@ Prioritize only extensions with a clear business need, for example:
 - richer process-event data for queue/rework analysis;
 - reproducible AR aging/DSO investigations;
 - enterprise retrieval/MCP connectors;
-- centralized tracing;
+- centralized tracing/telemetry export;
 - authenticated multi-user deployment;
 - multi-agent decomposition only if independent domains or parallel work make it beneficial.
 
@@ -185,6 +207,6 @@ Prioritize only extensions with a clear business need, for example:
 
 Example project description after live results are measured:
 
-> Built a deployable AI-assisted Order-to-Cash process-improvement agent using FastAPI, OpenAI Responses API, MySQL, deterministic Python scenario modeling, bounded state/memory, and layered evaluation; designed a controlled business benchmark and evaluated tool-selection, causal-discipline, and approval-boundary behavior across seven test cases.
+> Built a deployable AI-assisted Order-to-Cash process-improvement agent using FastAPI, OpenAI Responses API, MySQL, deterministic Python scenario modeling, bounded state/memory, runtime observability, and layered evaluation; designed a controlled business benchmark and evaluated tool-selection, causal-discipline, and approval-boundary behavior across seven test cases.
 
-Add measured pass rates only after they are actually recorded.
+Add measured pass rates, latency, or token metrics only after they are actually recorded.
