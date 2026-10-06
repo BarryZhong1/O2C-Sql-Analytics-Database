@@ -5,6 +5,7 @@ import sys
 from typing import Any
 
 from app.tools.process_analytics import analyze_process, compare_stage_performance
+from app.workflow import investigate_cycle_time
 
 
 CURRENT = ("2024-07-01", "2024-09-30")
@@ -73,6 +74,13 @@ def main() -> int:
         else None
     )
 
+    fixed_workflow = investigate_cycle_time(
+        start_date=CURRENT[0],
+        end_date=CURRENT[1],
+        compare_start_date=BASELINE[0],
+        compare_end_date=BASELINE[1],
+    )
+
     checks = [
         {
             "name": "Q3 total O2C is worse than Q2",
@@ -108,6 +116,17 @@ def main() -> int:
                 )
             ),
         },
+        {
+            "name": "fixed workflow selects order-to-ship as the candidate bottleneck",
+            "passed": (
+                fixed_workflow.get("candidate_bottleneck")
+                == "order_to_ship_days"
+            ),
+        },
+        {
+            "name": "fixed workflow produces an illustrative scenario",
+            "passed": bool(fixed_workflow.get("illustrative_scenario")),
+        },
     ]
 
     report = {
@@ -121,6 +140,10 @@ def main() -> int:
             "end_date": CURRENT[1],
         },
         "stage_comparison": stages,
+        "fixed_workflow": {
+            "candidate_bottleneck": fixed_workflow.get("candidate_bottleneck"),
+            "illustrative_scenario": fixed_workflow.get("illustrative_scenario"),
+        },
         "channel_order_to_ship": {
             "current": current_channels,
             "baseline": baseline_channels,
