@@ -58,14 +58,19 @@ jobs:
 
       - name: Capture SQL validation output
         run: |
-          docker compose exec -T db mysql -uroot -proot < agent/sql/validate_scenario_v1.sql             | tee scenario-v1-sql-validation.txt
+          set -o pipefail
+          docker compose exec -T db sh -c 'mysql -h127.0.0.1 -P3306 -uroot -p"$MYSQL_ROOT_PASSWORD"' < agent/sql/validate_scenario_v1.sql \
+            | tee scenario-v1-sql-validation.txt
 
       - name: Run Scenario V1 calibration
         working-directory: agent
         env:
           DATABASE_URL: mysql+pymysql://app:app_pw@localhost:3306/o2c
+          PYTHONPATH: .
         run: |
-          python scripts/calibrate_scenario_v1.py             | tee ../scenario-v1-calibration.json
+          set -o pipefail
+          python scripts/calibrate_scenario_v1.py \
+            | tee ../scenario-v1-calibration.json
 
       - name: Upload calibration artifacts
         if: always()
