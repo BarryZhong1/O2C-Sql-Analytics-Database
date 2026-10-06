@@ -11,6 +11,9 @@ SET time_zone = '+00:00';
 SET foreign_key_checks = 0; -- Disable during setup for performance
 SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
 
+-- Deterministic pseudo-random seed used by synthetic data generation.
+SET @o2c_rng_seed = 20241005;
+
 -- =============================================
 -- 1. DATABASE CREATION
 -- =============================================
@@ -303,10 +306,10 @@ SELECT
     'PHX-01' as loc_code,
     -- Stock levels based on product category and expected velocity
     CASE 
-        WHEN category = 'Electronics' AND unit_cost > 400 THEN 200 + FLOOR(RAND() * 100) -- Low stock for expensive items
-        WHEN category = 'Electronics' THEN 800 + FLOOR(RAND() * 400) -- Moderate stock for electronics
-        WHEN category = 'Apparel' THEN 1200 + FLOOR(RAND() * 800) -- High stock for volume apparel
-        ELSE 600 + FLOOR(RAND() * 400) -- Moderate stock for home goods
+        WHEN category = 'Electronics' AND unit_cost > 400 THEN 200 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 100) -- Low stock for expensive items
+        WHEN category = 'Electronics' THEN 800 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 400) -- Moderate stock for electronics
+        WHEN category = 'Apparel' THEN 1200 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 800) -- High stock for volume apparel
+        ELSE 600 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 400) -- Moderate stock for home goods
     END as on_hand_qty,
     0 as reserved_qty -- Will be updated after order generation
 FROM products
@@ -316,10 +319,10 @@ SELECT
     'DAL-01' as loc_code,
     -- Dallas gets 60% of Phoenix stock levels
     CASE 
-        WHEN category = 'Electronics' AND unit_cost > 400 THEN 120 + FLOOR(RAND() * 60)
-        WHEN category = 'Electronics' THEN 480 + FLOOR(RAND() * 240)
-        WHEN category = 'Apparel' THEN 720 + FLOOR(RAND() * 480)
-        ELSE 360 + FLOOR(RAND() * 240)
+        WHEN category = 'Electronics' AND unit_cost > 400 THEN 120 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 60)
+        WHEN category = 'Electronics' THEN 480 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 240)
+        WHEN category = 'Apparel' THEN 720 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 480)
+        ELSE 360 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 240)
     END as on_hand_qty,
     0 as reserved_qty
 FROM products;
@@ -539,11 +542,11 @@ BEGIN
         -- Select customer based on realistic segment distribution
         -- 50% SMB (1-22), 35% Mid (23-27), 15% Enterprise (28-32)
         IF i <= v_order_count * 0.50 THEN
-            SET v_customer_id = 1 + FLOOR(RAND() * 22); -- SMB customers
+            SET v_customer_id = 1 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 22); -- SMB customers
         ELSEIF i <= v_order_count * 0.85 THEN
-            SET v_customer_id = 23 + FLOOR(RAND() * 5); -- Mid customers
+            SET v_customer_id = 23 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 5); -- Mid customers
         ELSE
-            SET v_customer_id = 28 + FLOOR(RAND() * 5); -- Enterprise customers
+            SET v_customer_id = 28 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 5); -- Enterprise customers
         END IF;
         
         SELECT segment INTO v_segment FROM customers WHERE customer_id = v_customer_id;
@@ -553,16 +556,16 @@ BEGIN
         (v_customer_id, 
          -- Date distribution: 15% Q1, 25% Q2, 35% Q3, 25% Q4 (holiday boost)
          CASE 
-            WHEN RAND() < 0.15 THEN DATE_ADD('2024-01-01', INTERVAL FLOOR(RAND() * 90) DAY)
-            WHEN RAND() < 0.40 THEN DATE_ADD('2024-04-01', INTERVAL FLOOR(RAND() * 91) DAY)
-            WHEN RAND() < 0.75 THEN DATE_ADD('2024-07-01', INTERVAL FLOOR(RAND() * 92) DAY)
-            ELSE DATE_ADD('2024-10-01', INTERVAL FLOOR(RAND() * 92) DAY)
-         END + INTERVAL FLOOR(RAND() * 24) HOUR,
+            WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.15 THEN DATE_ADD('2024-01-01', INTERVAL FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 90) DAY)
+            WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.40 THEN DATE_ADD('2024-04-01', INTERVAL FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 91) DAY)
+            WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.75 THEN DATE_ADD('2024-07-01', INTERVAL FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 92) DAY)
+            ELSE DATE_ADD('2024-10-01', INTERVAL FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 92) DAY)
+         END + INTERVAL FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 24) HOUR,
          'DELIVERED', -- 95% delivered for analytics
          -- Channel distribution by segment
          CASE v_segment
-            WHEN 'SMB' THEN CASE WHEN RAND() < 0.6 THEN 'Web' ELSE 'Marketplace' END
-            WHEN 'Mid' THEN CASE WHEN RAND() < 0.7 THEN 'InsideSales' ELSE 'Web' END
+            WHEN 'SMB' THEN CASE WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.6 THEN 'Web' ELSE 'Marketplace' END
+            WHEN 'Mid' THEN CASE WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.7 THEN 'InsideSales' ELSE 'Web' END
             ELSE 'InsideSales' -- Enterprise always uses inside sales
          END,
          DATE_ADD(CURDATE(), INTERVAL 2 DAY) -- Standard 2-day lead time
@@ -580,18 +583,18 @@ BEGIN
         -- Add 1-6 items per order based on segment
         SET j = 1;
         WHILE j <= CASE v_segment 
-            WHEN 'SMB' THEN 1 + FLOOR(RAND() * 2) -- 1-2 items
-            WHEN 'Mid' THEN 2 + FLOOR(RAND() * 3) -- 2-4 items
-            ELSE 3 + FLOOR(RAND() * 4) -- 3-6 items
+            WHEN 'SMB' THEN 1 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 2) -- 1-2 items
+            WHEN 'Mid' THEN 2 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 3) -- 2-4 items
+            ELSE 3 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 4) -- 3-6 items
         END DO
             
             -- Select products with segment preferences
             SET v_product_id = CASE v_segment
                 WHEN 'SMB' THEN CASE
-                    WHEN RAND() < 0.6 THEN 7 + FLOOR(RAND() * 12) -- More apparel
-                    ELSE 1 + FLOOR(RAND() * 18) -- Mixed electronics/home
+                    WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.6 THEN 7 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 12) -- More apparel
+                    ELSE 1 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 18) -- Mixed electronics/home
                 END
-                ELSE 1 + FLOOR(RAND() * 18) -- All products
+                ELSE 1 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 18) -- All products
             END;
             
             -- Insert order items with realistic pricing
@@ -600,9 +603,9 @@ BEGIN
                 v_order_id,
                 v_product_id,
                 CASE v_segment 
-                    WHEN 'SMB' THEN 1 + FLOOR(RAND() * 5) -- 1-5 qty
-                    WHEN 'Mid' THEN 5 + FLOOR(RAND() * 10) -- 5-15 qty
-                    ELSE 10 + FLOOR(RAND() * 20) -- 10-30 qty
+                    WHEN 'SMB' THEN 1 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 5) -- 1-5 qty
+                    WHEN 'Mid' THEN 5 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 10) -- 5-15 qty
+                    ELSE 10 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 20) -- 10-30 qty
                 END,
                 list_price,
                 CASE v_segment
@@ -621,12 +624,12 @@ BEGIN
         INSERT INTO shipments (order_id, ship_ts, promised_delivery_ts, actual_delivery_ts, status, ship_from_loc, carrier, tracking_number)
         SELECT 
             v_order_id,
-            DATE_ADD(order_ts, INTERVAL 1 + FLOOR(RAND() * 2) DAY),
-            DATE_ADD(order_ts, INTERVAL 4 + FLOOR(RAND() * 2) DAY),
-            DATE_ADD(order_ts, INTERVAL 3 + FLOOR(RAND() * 4) DAY), -- 85% on-time
+            DATE_ADD(order_ts, INTERVAL 1 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 2) DAY),
+            DATE_ADD(order_ts, INTERVAL 4 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 2) DAY),
+            DATE_ADD(order_ts, INTERVAL 3 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 4) DAY), -- 85% on-time
             'DELIVERED',
-            CASE WHEN RAND() < 0.6 THEN 'PHX-01' ELSE 'DAL-01' END,
-            CASE WHEN RAND() < 0.5 THEN 'UPS' ELSE 'FedEx' END,
+            CASE WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.6 THEN 'PHX-01' ELSE 'DAL-01' END,
+            CASE WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.5 THEN 'UPS' ELSE 'FedEx' END,
             CONCAT('TRK', LPAD(v_order_id, 8, '0'))
         FROM orders WHERE order_id = v_order_id;
         
@@ -643,8 +646,8 @@ BEGIN
             END,
             COALESCE(SUM(oi.qty * oi.unit_price - oi.discount), 0),
             COALESCE(SUM(oi.tax), 0),
-            25.00 + (RAND() * 25), -- $25-50 freight
-            COALESCE(SUM(oi.qty * oi.unit_price - oi.discount), 0) + COALESCE(SUM(oi.tax), 0) + 25.00 + (RAND() * 25)
+            25.00 + (RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 25), -- $25-50 freight
+            COALESCE(SUM(oi.qty * oi.unit_price - oi.discount), 0) + COALESCE(SUM(oi.tax), 0) + 25.00 + (RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 25)
         FROM orders o
         JOIN customers c ON o.customer_id = c.customer_id
         JOIN shipments s ON o.order_id = s.order_id
@@ -653,20 +656,20 @@ BEGIN
         GROUP BY o.order_id, s.ship_ts, c.payment_terms;
         
         -- Generate payments (90% payment rate)
-        IF RAND() < 0.90 THEN
+        IF RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.90 THEN
             INSERT INTO payments (invoice_id, payment_ts, method, amount, reference_number)
             SELECT 
                 i.invoice_id,
                 CASE c.payment_terms
                     WHEN 'Prepaid' THEN o.order_ts
-                    ELSE DATE_ADD(i.due_date, INTERVAL -5 + FLOOR(RAND() * 15) DAY) -- ±5-10 days from due
+                    ELSE DATE_ADD(i.due_date, INTERVAL -5 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 15) DAY) -- ±5-10 days from due
                 END,
                 CASE c.segment
-                    WHEN 'Enterprise' THEN CASE WHEN RAND() < 0.6 THEN 'ACH' ELSE 'Wire' END
-                    WHEN 'Mid' THEN CASE WHEN RAND() < 0.4 THEN 'ACH' WHEN RAND() < 0.7 THEN 'Card' ELSE 'Check' END
-                    ELSE CASE WHEN RAND() < 0.5 THEN 'Card' ELSE 'ACH' END
+                    WHEN 'Enterprise' THEN CASE WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.6 THEN 'ACH' ELSE 'Wire' END
+                    WHEN 'Mid' THEN CASE WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.4 THEN 'ACH' WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.7 THEN 'Card' ELSE 'Check' END
+                    ELSE CASE WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.5 THEN 'Card' ELSE 'ACH' END
                 END,
-                CASE WHEN RAND() < 0.95 THEN i.total ELSE i.total * (0.3 + RAND() * 0.6) END, -- 95% full payment
+                CASE WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.95 THEN i.total ELSE i.total * (0.3 + RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 0.6) END, -- 95% full payment
                 CONCAT('PAY', DATE_FORMAT(NOW(), '%Y%m%d'), LPAD(i.invoice_id, 6, '0'))
             FROM invoices i
             JOIN orders o ON i.order_id = o.order_id  
@@ -675,26 +678,26 @@ BEGIN
         END IF;
         
         -- Generate returns (3% return rate)
-        IF RAND() < 0.03 THEN
+        IF RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.03 THEN
             INSERT INTO returns (order_id, product_id, qty, reason_code, rma_ts, disposition, refund_amount, processed_by)
             SELECT 
                 oi.order_id,
                 oi.product_id,
-                GREATEST(1, FLOOR(oi.qty * (0.2 + RAND() * 0.6))), -- 20-80% of original qty
+                GREATEST(1, FLOOR(oi.qty * (0.2 + RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 0.6))), -- 20-80% of original qty
                 CASE 
-                    WHEN RAND() < 0.4 THEN 'Damaged'
-                    WHEN RAND() < 0.65 THEN 'Wrong Item'
-                    WHEN RAND() < 0.80 THEN 'Defective'
+                    WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.4 THEN 'Damaged'
+                    WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.65 THEN 'Wrong Item'
+                    WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.80 THEN 'Defective'
                     ELSE 'Customer Error'
                 END,
-                DATE_ADD(s.actual_delivery_ts, INTERVAL 5 + FLOOR(RAND() * 25) DAY),
+                DATE_ADD(s.actual_delivery_ts, INTERVAL 5 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 25) DAY),
                 'Resell',
-                oi.unit_price * GREATEST(1, FLOOR(oi.qty * (0.2 + RAND() * 0.6))),
+                oi.unit_price * GREATEST(1, FLOOR(oi.qty * (0.2 + RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 0.6))),
                 'auto_system'
             FROM order_items oi
             JOIN shipments s ON oi.order_id = s.order_id
             WHERE oi.order_id = v_order_id
-            ORDER BY RAND()
+            ORDER BY RAND(@o2c_rng_seed := @o2c_rng_seed + 1)
             LIMIT 1;
         END IF;
         
@@ -722,7 +725,7 @@ END$
 DELIMITER ;
 
 -- Seed the session random generator so the synthetic dataset is reproducible
--- across local runs and CI. Subsequent RAND() calls use this seeded sequence.
+-- across local runs and CI. Subsequent RAND(@o2c_rng_seed := @o2c_rng_seed + 1) calls use this seeded sequence.
 SET @o2c_seed_initializer = RAND(20241005);
 
 -- Execute the data generation procedure
