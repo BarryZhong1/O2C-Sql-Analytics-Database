@@ -102,6 +102,85 @@ def _period_result(
     }
 
 
+def _group_change_summary(
+    current: dict[str, Any],
+    comparison: dict[str, Any],
+) -> dict[str, Any]:
+    """Calculate grouped period-over-period changes outside the LLM.
+
+    This keeps arithmetic deterministic and gives the agent an explicit ranked
+    list of which segment/channel deteriorated most rather than requiring the
+    model to subtract values from two separate result sets.
+    """
+    current_map = {
+        str(row["dimension_value"]): row
+        for row in current.get("rows", [])
+    }
+    comparison_map = {
+        str(row["dimension_value"]): row
+        for row in comparison.get("rows", [])
+    }
+
+    dimensions = sorted(set(current_map) | set(comparison_map))
+    changes: list[dict[str, Any]] = []
+
+    for dimension in dimensions:
+        current_row = current_map.get(dimension)
+        comparison_row = comparison_map.get(dimension)
+        cur = current_row.get("metric_value") if current_row else None
+        prev = comparison_row.get("metric_value") if comparison_row else None
+
+        absolute = None
+        percent = None
+        if cur is not None and prev is not None:
+            cur_float = float(cur)
+            prev_float = float(prev)
+            absolute = round(cur_float - prev_float, 2)
+            percent = (
+                round((cur_float - prev_float) / prev_float * 100, 2)
+                if prev_float != 0
+                else None
+            )
+
+        changes.append(
+            {
+                "dimension_value": dimension,
+                "current_value": float(cur) if cur is not None else None,
+                "comparison_value": float(prev) if prev is not None else None,
+                "absolute_change": absolute,
+                "percent_change": percent,
+                "current_record_count": (
+                    int(current_row["record_count"]) if current_row else 0
+                ),
+                "comparison_record_count": (
+                    int(comparison_row["record_count"]) if comparison_row else 0
+                ),
+            }
+        )
+
+    ranked = sorted(
+        changes,
+        key=lambda item: (
+            item["absolute_change"] is not None,
+            item["absolute_change"]
+            if item["absolute_change"] is not None
+            else float("-inf"),
+        ),
+        reverse=True,
+    )
+
+    return {
+        "changes": changes,
+        "deterioration_rank": ranked,
+        "interpretation_note": (
+            "Positive absolute_change means the metric increased. For duration "
+            "or delay metrics, a larger positive change is deterioration; for "
+            "rates such as on-time performance, interpret direction using the "
+            "metric definition rather than this generic ranking."
+        ),
+    }
+
+
 def analyze_process(
     metric: str,
     start_date: str,
@@ -113,8 +192,10 @@ def analyze_process(
     """
     Analyze one approved O2C process metric over a date range.
 
-    If a comparison period is supplied, the tool also returns absolute and
-    percentage change for the ungrouped metric.
+    If a comparison period is supplied, the tool also returns deterministic
+    absolute/percentage changes. Grouped comparisons additionally return a
+    per-dimension change table and deterioration ranking so the LLM never needs
+    to perform arithmetic from raw rows.
 
     Use payment_delay_vs_due_days or late_payment_rate when evaluating collection
     performance across customers with different contractual payment terms.
@@ -132,7 +213,12 @@ def analyze_process(
         )
         result["comparison"] = comparison
 
-        if not group_by and current["rows"] and comparison["rows"]:
+        if group_by:
+            result["group_change_summary"] = _group_change_summary(
+                current,
+                comparison,
+            )
+        elif current["rows"] and comparison["rows"]:
             cur = current["rows"][0]["metric_value"]
             prev = comparison["rows"][0]["metric_value"]
             if cur is not None and prev is not None:
