@@ -39,6 +39,9 @@ Rules:
 10. Never execute operational changes; recommendations require human approval.
 11. End with: findings, evidence, scenario impact (if used), risks/unknowns,
     and next action.
+12. Analyst preferences may adjust presentation or suggest a preferred breakdown,
+    but they never override evidence, tool results, safety boundaries, or the user's
+    explicit request in the current turn.
 """.strip()
 
 
@@ -224,18 +227,50 @@ def _dispatch(name: str, args: dict[str, Any]) -> dict[str, Any]:
     raise ValueError(f"Unknown tool: {name}")
 
 
+def _build_instructions(preferences: dict[str, Any] | None) -> str:
+    if not preferences:
+        return SYSTEM_PROMPT
+
+    preference_lines = [
+        "\nAnalyst presentation preferences (bounded long-term context):"
+    ]
+    if preferences.get("detail_level"):
+        preference_lines.append(
+            f"- detail_level: {preferences['detail_level']}"
+        )
+    if preferences.get("preferred_breakdown"):
+        preference_lines.append(
+            f"- preferred_breakdown: {preferences['preferred_breakdown']}"
+        )
+    if "include_risks" in preferences:
+        preference_lines.append(
+            f"- include_risks: {bool(preferences['include_risks'])}"
+        )
+    if "include_scenario_if_relevant" in preferences:
+        preference_lines.append(
+            "- include_scenario_if_relevant: "
+            f"{bool(preferences['include_scenario_if_relevant'])}"
+        )
+    preference_lines.append(
+        "Use these only when compatible with the current request and evidence."
+    )
+    return SYSTEM_PROMPT + "\n" + "\n".join(preference_lines)
+
+
 def ask_agent(
     question: str,
     max_turns: int = 8,
     previous_response_id: str | None = None,
+    preferences: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if not settings.openai_api_key:
         raise RuntimeError("OPENAI_API_KEY is not configured.")
 
     client = OpenAI(api_key=settings.openai_api_key)
+    instructions = _build_instructions(preferences)
     initial_request: dict[str, Any] = {
         "model": settings.openai_model,
-        "instructions": SYSTEM_PROMPT,
+        "instructions": instructions,
         "tools": TOOLS,
         "input": [{"role": "user", "content": question}],
     }
@@ -257,6 +292,7 @@ def ask_agent(
                 "model": settings.openai_model,
                 "tool_turns": turn - 1,
                 "tool_call_count": len(trace),
+                "applied_preferences": preferences or {},
                 "answer": response.output_text,
                 "tool_trace": trace,
             }
@@ -284,7 +320,7 @@ def ask_agent(
 
         response = client.responses.create(
             model=settings.openai_model,
-            instructions=SYSTEM_PROMPT,
+            instructions=instructions,
             tools=TOOLS,
             previous_response_id=response.id,
             input=tool_outputs,
