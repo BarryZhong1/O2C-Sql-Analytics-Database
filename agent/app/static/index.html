@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>O2C Process Improvement Agent</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0b1020;
+      --panel: #131a2b;
+      --panel-2: #1a2237;
+      --text: #f3f5f8;
+      --muted: #aeb8cc;
+      --line: #2a3653;
+      --accent: #7dd3fc;
+      --good: #86efac;
+      --bad: #fca5a5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(180deg, #09101e 0%, var(--bg) 100%);
+      color: var(--text);
+    }
+    main { max-width: 1100px; margin: 0 auto; padding: 36px 20px 64px; }
+    h1 { margin: 0 0 8px; font-size: clamp(28px, 5vw, 42px); }
+    h2 { margin-top: 0; font-size: 18px; }
+    p { color: var(--muted); line-height: 1.55; }
+    .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 18px; }
+    .card {
+      background: rgba(19, 26, 43, .94);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 14px 40px rgba(0, 0, 0, .2);
+    }
+    label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 6px; }
+    input, textarea, select, button {
+      width: 100%;
+      font: inherit;
+      border-radius: 9px;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 10px 12px;
+    }
+    textarea { min-height: 150px; resize: vertical; line-height: 1.45; }
+    button {
+      cursor: pointer;
+      background: #164e63;
+      border-color: #0e7490;
+      font-weight: 700;
+      margin-top: 14px;
+    }
+    button:hover { filter: brightness(1.12); }
+    button:disabled { cursor: wait; opacity: .65; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .checks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+    .check { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+    .check input { width: auto; }
+    #status { min-height: 20px; margin-top: 10px; font-size: 13px; color: var(--muted); }
+    #status.good { color: var(--good); }
+    #status.bad { color: var(--bad); }
+    #answer {
+      white-space: pre-wrap;
+      line-height: 1.6;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px;
+      min-height: 120px;
+    }
+    details { margin-top: 14px; }
+    summary { cursor: pointer; color: var(--accent); }
+    pre {
+      overflow: auto;
+      background: #080d18;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      padding: 12px;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .tag { display: inline-block; color: var(--accent); border: 1px solid #155e75; border-radius: 999px; padding: 4px 9px; font-size: 12px; margin-right: 6px; }
+    @media (max-width: 800px) { .grid, .row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<main>
+  <span class="tag">Read-only analytics</span>
+  <span class="tag">Scenario planning</span>
+  <span class="tag">Human approval</span>
+  <h1>O2C Process Improvement Agent</h1>
+  <p>Investigate process deterioration, drill into business drivers, retrieve operating context, and test transparent what-if scenarios.</p>
+
+  <div class="grid">
+    <section class="card">
+      <h2>Investigation</h2>
+      <label for="question">Business question</label>
+      <textarea id="question">Investigate why O2C cycle time worsened in Q3 2024 versus Q2 2024. Identify the stage that deteriorated most, drill into the strongest driver, and test a realistic improvement scenario.</textarea>
+
+      <div class="row">
+        <div>
+          <label for="session">Session ID</label>
+          <input id="session" value="demo-1" placeholder="optional" />
+        </div>
+        <div>
+          <label for="profile">Analyst profile ID</label>
+          <input id="profile" value="analyst-demo" placeholder="optional" />
+        </div>
+      </div>
+
+      <label class="check"><input id="use-session" type="checkbox" checked /> Continue a stateful investigation session</label>
+      <button id="run">Run investigation</button>
+      <div id="status"></div>
+    </section>
+
+    <aside class="card">
+      <h2>Reporting preferences</h2>
+      <p>Preferences affect presentation and default drill-down style only. They cannot override evidence or approval boundaries.</p>
+      <label for="detail">Detail level</label>
+      <select id="detail">
+        <option value="balanced">Balanced</option>
+        <option value="executive">Executive</option>
+        <option value="detailed">Detailed</option>
+      </select>
+
+      <label for="breakdown">Preferred breakdown</label>
+      <select id="breakdown">
+        <option value="channel">Channel</option>
+        <option value="segment">Customer segment</option>
+        <option value="none">No preference</option>
+      </select>
+
+      <div class="checks">
+        <label class="check"><input id="risks" type="checkbox" checked /> Include risks</label>
+        <label class="check"><input id="scenario" type="checkbox" checked /> Include scenario</label>
+      </div>
+      <button id="save-profile">Save profile preferences</button>
+    </aside>
+  </div>
+
+  <section class="card" style="margin-top:18px">
+    <h2>Agent answer</h2>
+    <div id="answer">No investigation has been run yet.</div>
+    <details>
+      <summary>Inspect tool trace</summary>
+      <pre id="trace">[]</pre>
+    </details>
+    <details>
+      <summary>Inspect response metadata</summary>
+      <pre id="meta">{}</pre>
+    </details>
+  </section>
+</main>
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  function setStatus(message, kind = "") {
+    $("status").textContent = message;
+    $("status").className = kind;
+  }
+
+  async function readJson(response) {
+    const text = await response.text();
+    let payload;
+    try { payload = JSON.parse(text); }
+    catch { payload = { detail: text || `HTTP ${response.status}` }; }
+    if (!response.ok) throw new Error(payload.detail || JSON.stringify(payload));
+    return payload;
+  }
+
+  $("save-profile").addEventListener("click", async () => {
+    const profile = $("profile").value.trim();
+    if (!profile) return setStatus("Enter a profile ID before saving preferences.", "bad");
+    setStatus("Saving preferences...");
+    try {
+      const response = await fetch(`/agent/profile/${encodeURIComponent(profile)}/preferences`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          detail_level: $("detail").value,
+          preferred_breakdown: $("breakdown").value,
+          include_risks: $("risks").checked,
+          include_scenario_if_relevant: $("scenario").checked
+        })
+      });
+      await readJson(response);
+      setStatus("Preferences saved.", "good");
+    } catch (error) {
+      setStatus(`Could not save preferences: ${error.message}`, "bad");
+    }
+  });
+
+  $("run").addEventListener("click", async () => {
+    const button = $("run");
+    const question = $("question").value.trim();
+    const profile = $("profile").value.trim();
+    const session = $("session").value.trim();
+    const useSession = $("use-session").checked;
+
+    if (question.length < 10) return setStatus("Enter a fuller business question.", "bad");
+    if (useSession && !session) return setStatus("Enter a session ID or disable session mode.", "bad");
+
+    button.disabled = true;
+    setStatus("Agent is investigating the business data...");
+    try {
+      const endpoint = useSession
+        ? `/agent/session/${encodeURIComponent(session)}/ask`
+        : "/agent/ask";
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question, profile_id: profile || null })
+      });
+      const payload = await readJson(response);
+      $("answer").textContent = payload.answer || "No answer returned.";
+      $("trace").textContent = JSON.stringify(payload.tool_trace || [], null, 2);
+      const metadata = { ...payload };
+      delete metadata.answer;
+      delete metadata.tool_trace;
+      $("meta").textContent = JSON.stringify(metadata, null, 2);
+      setStatus(`Completed with ${payload.tool_call_count ?? 0} tool call(s).`, "good");
+    } catch (error) {
+      setStatus(`Investigation failed: ${error.message}`, "bad");
+    } finally {
+      button.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
