@@ -21,9 +21,7 @@ Important rules:
 - Do not reward verbosity by itself.
 - A process-change log can support a hypothesis but is not causal proof.
 - Give every rubric dimension an integer score of 0, 1, or 2.
-- Return JSON only, with exactly these top-level keys: scores, rationales.
-- `scores` must map every rubric dimension ID to an integer 0-2.
-- `rationales` must map every rubric dimension ID to a short evidence-based explanation.
+- Give every rubric dimension a short evidence-based rationale.
 """.strip()
 
 
@@ -46,6 +44,50 @@ def _judge_payload(
         },
     }
     return json.dumps(payload, indent=2, default=str)
+
+
+def _judge_text_format(rubric: dict[str, Any]) -> dict[str, Any]:
+    """Build a strict Responses API structured-output contract from the rubric IDs."""
+    dimension_ids = [dimension["id"] for dimension in rubric["dimensions"]]
+    score_properties = {
+        dimension_id: {"type": "integer", "enum": [0, 1, 2]}
+        for dimension_id in dimension_ids
+    }
+    rationale_properties = {
+        dimension_id: {"type": "string"}
+        for dimension_id in dimension_ids
+    }
+
+    return {
+        "format": {
+            "type": "json_schema",
+            "name": "o2c_semantic_evaluation",
+            "description": (
+                "Scores and evidence-based rationales for every documented semantic "
+                "evaluation dimension."
+            ),
+            "strict": True,
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "scores": {
+                        "type": "object",
+                        "properties": score_properties,
+                        "required": dimension_ids,
+                        "additionalProperties": False,
+                    },
+                    "rationales": {
+                        "type": "object",
+                        "properties": rationale_properties,
+                        "required": dimension_ids,
+                        "additionalProperties": False,
+                    },
+                },
+                "required": ["scores", "rationales"],
+                "additionalProperties": False,
+            },
+        }
+    }
 
 
 def _validate_judge_output(payload: dict[str, Any]) -> dict[str, Any]:
@@ -88,6 +130,7 @@ def judge_agent_run(
     response = client.responses.create(
         model=model or settings.openai_model,
         instructions=JUDGE_INSTRUCTIONS,
+        text=_judge_text_format(rubric),
         input=[
             {
                 "role": "user",
@@ -100,7 +143,7 @@ def judge_agent_run(
     try:
         parsed = json.loads(raw)
     except json.JSONDecodeError as exc:
-        raise ValueError(f"Judge returned invalid JSON: {raw[:500]}") from exc
+        raise ValueError(f"Judge returned invalid structured JSON: {raw[:500]}") from exc
 
     result = _validate_judge_output(parsed)
     return {
