@@ -1,7 +1,7 @@
 # Business Scenario V1 — Marketplace Fulfillment Bottleneck
 
-> Draft design for the first reproducible portfolio/demo scenario.  
-> This document defines the business story and evaluation target before changing the synthetic dataset.
+> Validated design for the first reproducible portfolio/demo scenario.  
+> Measured results are recorded in `agent/evals/scenario_v1_benchmark.json` and `scenario_v1_benchmark.md`.
 
 ## 1. Scenario objective
 
@@ -67,10 +67,10 @@ For approximately 25% of Q3 Enterprise invoices that have a payment:
 
 Purpose:
 
-- create a smaller invoice-to-payment change;
-- force the agent to rank stage contributions rather than simply picking the numerically longest stage.
+- introduce a smaller collections-side confounder;
+- force the agent to compare stage contributions rather than simply picking the numerically longest stage.
 
-This is a controlled synthetic confounder, not the primary process issue.
+The aggregate invoice-to-payment metric does not have to worsen because customer/payment mix can offset this small injection. The acceptance condition is that the confounder exists but does not dominate the primary Marketplace fulfillment signal.
 
 ## 5. Why downstream dates move with shipment
 
@@ -225,15 +225,15 @@ Do not add these until the first scenario is validated.
 
 The scenario is ready for the portfolio demo when:
 
-- [ ] Q3 total O2C cycle time is measurably worse than Q2.
-- [ ] Order-to-ship is the largest injected stage deterioration.
-- [ ] Marketplace is the strongest affected channel.
-- [ ] The secondary payment delay is visible but smaller.
-- [ ] The fixed Workflow v1 can report the broad deterioration.
+- [x] Q3 total O2C cycle time is measurably worse than Q2.
+- [x] Order-to-ship is the largest injected stage deterioration.
+- [x] Marketplace is the strongest affected channel.
+- [x] The secondary collections confounder exists without overtaking the primary signal.
+- [x] The fixed Workflow v1 reports the broad deterioration and selects the deteriorating stage.
 - [ ] Agent v1 can outperform the fixed workflow by selecting a useful drill-down.
-- [ ] The simulator produces auditable scenario math.
-- [ ] At least one eval fails if the agent incorrectly claims causality.
-- [ ] Re-running the scenario produces the same injected pattern.
+- [x] The simulator produces auditable scenario math.
+- [ ] Automated agent eval demonstrates failure when causality is overclaimed.
+- [x] Re-running the scenario produces the same injected pattern.
 
 ## 14. Demo narrative
 
