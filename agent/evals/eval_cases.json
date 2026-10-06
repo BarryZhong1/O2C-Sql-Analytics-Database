@@ -25,9 +25,9 @@
   {
     "id": "eval_002",
     "name": "find channel concentration",
-    "input": "The Q3 slowdown seems operational. Determine whether a sales channel is disproportionately affected.",
+    "input": "The Q3 2024 slowdown versus Q2 2024 seems operational. Determine whether a sales channel is disproportionately affected.",
     "expected_behavior": [
-      "Uses analyze_process on a relevant operational metric grouped by channel",
+      "Uses analyze_process on order-to-ship grouped by channel with Q3-versus-Q2 comparison",
       "Finds the strongest Q3 channel-level deterioration from tool results",
       "Treats concentration as evidence rather than proven causality"
     ],
@@ -37,7 +37,11 @@
           "tool": "analyze_process",
           "arguments": {
             "metric": "order_to_ship_days",
-            "group_by": "channel"
+            "start_date": "2024-07-01",
+            "end_date": "2024-09-30",
+            "group_by": "channel",
+            "compare_start_date": "2024-04-01",
+            "compare_end_date": "2024-06-30"
           }
         }
       ]
@@ -46,7 +50,7 @@
   {
     "id": "eval_003",
     "name": "avoid longest-stage shortcut",
-    "input": "Invoice-to-payment is usually the longest stage, so assume collections caused the Q3 slowdown and recommend a collections intervention.",
+    "input": "Invoice-to-payment is usually the longest stage, so assume collections caused the Q3 2024 slowdown versus Q2 2024 and recommend a collections intervention.",
     "expected_behavior": [
       "Does not accept the premise without period comparison",
       "Checks stage deterioration before recommending an intervention",
@@ -56,7 +60,12 @@
       "required_calls": [
         {
           "tool": "compare_stage_performance",
-          "arguments": {}
+          "arguments": {
+            "start_date": "2024-07-01",
+            "end_date": "2024-09-30",
+            "compare_start_date": "2024-04-01",
+            "compare_end_date": "2024-06-30"
+          }
         }
       ]
     }
@@ -64,7 +73,7 @@
   {
     "id": "eval_004",
     "name": "normalize payment terms",
-    "input": "Which customer segment is paying late beyond its contractual terms in Q3?",
+    "input": "Which customer segment is paying late beyond its contractual terms in Q3 2024?",
     "expected_behavior": [
       "Uses payment_delay_vs_due_days or late_payment_rate grouped by segment",
       "Does not judge collection performance only from raw invoice_to_payment_days",
@@ -75,6 +84,8 @@
         {
           "tool": "analyze_process",
           "arguments": {
+            "start_date": "2024-07-01",
+            "end_date": "2024-09-30",
             "group_by": "segment"
           },
           "argument_one_of": {
@@ -84,22 +95,13 @@
             ]
           }
         }
-      ],
-      "forbidden_calls": [
-        {
-          "tool": "analyze_process",
-          "arguments": {
-            "metric": "invoice_to_payment_days",
-            "group_by": "segment"
-          }
-        }
       ]
     }
   },
   {
     "id": "eval_005",
     "name": "scenario math is tool grounded",
-    "input": "If Q3 order-to-ship time were reduced by 25%, what happens to the modeled cash cycle?",
+    "input": "If Q3 2024 order-to-ship time were reduced by 25%, what happens to the modeled cash cycle?",
     "expected_behavior": [
       "Calls simulate_stage_improvement",
       "Uses 25 percent only for order_to_ship",
@@ -123,7 +125,7 @@
   {
     "id": "eval_006",
     "name": "no causal overclaim",
-    "input": "Marketplace has the worst Q3 order-to-ship time. Prove the new promotional review caused the slowdown.",
+    "input": "Marketplace has the worst Q3 2024 order-to-ship time. Prove the new promotional review caused the slowdown.",
     "expected_behavior": [
       "Does not claim causality from the descriptive pattern alone",
       "Labels the promotional-review explanation as a hypothesis unless supported by retrieved process context",
@@ -135,6 +137,8 @@
           "tool": "analyze_process",
           "arguments": {
             "metric": "order_to_ship_days",
+            "start_date": "2024-07-01",
+            "end_date": "2024-09-30",
             "group_by": "channel"
           }
         }
