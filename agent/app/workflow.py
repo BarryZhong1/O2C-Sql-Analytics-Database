@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from app.tools.process_analytics import analyze_process, get_stage_baseline
+from app.tools.process_analytics import (
+    analyze_process,
+    compare_stage_performance,
+)
 from app.tools.scenario_simulator import simulate_stage_improvement
 
 
@@ -13,8 +16,12 @@ def investigate_cycle_time(
     """
     Workflow v1: fixed sequence used as a baseline before agentic orchestration.
 
-    It measures total cycle-time change, retrieves stage baselines, and runs a
-    simple 20% improvement scenario on the currently slowest cash-cycle stage.
+    The workflow measures total cycle-time change, ranks the sequential
+    cash-cycle stages by period-over-period deterioration, and runs an
+    illustrative 20% what-if reduction on the stage that worsened the most.
+
+    It intentionally does not decide which business dimension to drill into.
+    That gap is reserved for Agent v1.
     """
     comparison = analyze_process(
         metric="total_o2c_cycle_days",
@@ -23,19 +30,24 @@ def investigate_cycle_time(
         compare_start_date=compare_start_date,
         compare_end_date=compare_end_date,
     )
-    baseline = get_stage_baseline(start_date, end_date)
-
-    stages = {
-        "order_to_ship_days": baseline.get("order_to_ship_days"),
-        "ship_to_invoice_days": baseline.get("ship_to_invoice_days"),
-        "invoice_to_payment_days": baseline.get("invoice_to_payment_days"),
-    }
-    valid_stages = {k: float(v) for k, v in stages.items() if v is not None}
+    stage_comparison = compare_stage_performance(
+        start_date=start_date,
+        end_date=end_date,
+        compare_start_date=compare_start_date,
+        compare_end_date=compare_end_date,
+    )
 
     scenario = None
-    bottleneck = None
-    if valid_stages:
-        bottleneck = max(valid_stages, key=valid_stages.get)
+    candidate_bottleneck = None
+
+    ranked = stage_comparison.get("deterioration_rank", [])
+    if ranked:
+        top = ranked[0]
+        change = top.get("absolute_change_days")
+        if change is not None and float(change) > 0:
+            candidate_bottleneck = top["stage"]
+
+    if candidate_bottleneck:
         kwargs = {
             "start_date": start_date,
             "end_date": end_date,
@@ -48,17 +60,19 @@ def investigate_cycle_time(
             "ship_to_invoice_days": "ship_to_invoice_reduction_pct",
             "invoice_to_payment_days": "invoice_to_payment_reduction_pct",
         }
-        kwargs[mapping[bottleneck]] = 20
+        kwargs[mapping[candidate_bottleneck]] = 20
         scenario = simulate_stage_improvement(**kwargs)
 
     return {
         "workflow": "fixed_cycle_time_investigation_v1",
         "cycle_time_comparison": comparison,
-        "stage_baseline": baseline,
-        "candidate_bottleneck": bottleneck,
+        "stage_comparison": stage_comparison,
+        "candidate_bottleneck": candidate_bottleneck,
         "illustrative_scenario": scenario,
         "note": (
-            "The bottleneck is selected from average stage duration only. "
-            "Agent v1 should investigate multiple dimensions before recommending action."
+            "Workflow v1 ranks stages by deterioration rather than absolute "
+            "duration, but it does not autonomously choose segment/channel "
+            "drill-downs or retrieve business context. Agent v1 is evaluated "
+            "on those next-step decisions."
         ),
     }

@@ -7,7 +7,11 @@ from openai import OpenAI
 
 from app.config import settings
 from app.tools.policy_retriever import retrieve_policy
-from app.tools.process_analytics import analyze_process, get_stage_baseline
+from app.tools.process_analytics import (
+    analyze_process,
+    compare_stage_performance,
+    get_stage_baseline,
+)
 from app.tools.scenario_simulator import simulate_stage_improvement
 
 
@@ -21,12 +25,18 @@ Rules:
 1. Separate OBSERVED EVIDENCE from HYPOTHESES and ASSUMPTIONS.
 2. Never invent KPI values.
 3. Do not claim causality from descriptive patterns alone.
-4. Use process analytics to measure and drill down before recommending action.
-5. Use policy retrieval when business rules or SLA expectations matter.
-6. Use the deterministic simulator for numerical what-if claims.
-7. Scenario reductions are assumptions, not guaranteed intervention effects.
-8. Never execute operational changes; recommendations require human approval.
-9. End with: findings, evidence, scenario impact (if used), risks/unknowns, and next action.
+4. When a KPI worsens across periods, distinguish the stage that deteriorated
+   most from the stage with the longest absolute duration.
+5. Use process analytics to measure and drill down before recommending action.
+6. When comparing collection performance across customers with different payment
+   terms, prefer payment_delay_vs_due_days or late_payment_rate over raw
+   invoice_to_payment_days unless the user explicitly asks about cash-cycle length.
+7. Use policy retrieval when business rules or SLA expectations matter.
+8. Use the deterministic simulator for numerical what-if claims.
+9. Scenario reductions are assumptions, not guaranteed intervention effects.
+10. Never execute operational changes; recommendations require human approval.
+11. End with: findings, evidence, scenario impact (if used), risks/unknowns,
+    and next action.
 """.strip()
 
 
@@ -36,7 +46,9 @@ TOOLS = [
         "name": "analyze_process",
         "description": (
             "Analyze an approved O2C process KPI over a date range, optionally "
-            "grouped by segment or channel and optionally compared with another period."
+            "grouped by segment or channel and optionally compared with another period. "
+            "Use due-date-relative payment metrics when judging collection performance "
+            "across different contractual terms."
         ),
         "parameters": {
             "type": "object",
@@ -49,6 +61,8 @@ TOOLS = [
                         "ship_to_delivery_days",
                         "ship_to_invoice_days",
                         "invoice_to_payment_days",
+                        "payment_delay_vs_due_days",
+                        "late_payment_rate",
                         "on_time_delivery_rate",
                         "on_time_ship_rate",
                     ],
@@ -73,6 +87,32 @@ TOOLS = [
                 "start_date",
                 "end_date",
                 "group_by",
+                "compare_start_date",
+                "compare_end_date",
+            ],
+            "additionalProperties": False,
+        },
+        "strict": True,
+    },
+    {
+        "type": "function",
+        "name": "compare_stage_performance",
+        "description": (
+            "Compare sequential O2C cash-cycle stages across two periods and rank "
+            "them by deterioration. Use this when diagnosing which stage changed, "
+            "rather than assuming the longest stage is the problem."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "start_date": {"type": "string", "description": "Current/problem period start YYYY-MM-DD"},
+                "end_date": {"type": "string", "description": "Current/problem period end YYYY-MM-DD"},
+                "compare_start_date": {"type": "string", "description": "Baseline period start YYYY-MM-DD"},
+                "compare_end_date": {"type": "string", "description": "Baseline period end YYYY-MM-DD"},
+            },
+            "required": [
+                "start_date",
+                "end_date",
                 "compare_start_date",
                 "compare_end_date",
             ],
@@ -143,6 +183,8 @@ TOOLS = [
 def _dispatch(name: str, args: dict[str, Any]) -> dict[str, Any]:
     if name == "analyze_process":
         return analyze_process(**args)
+    if name == "compare_stage_performance":
+        return compare_stage_performance(**args)
     if name == "get_stage_baseline":
         return get_stage_baseline(**args)
     if name == "simulate_stage_improvement":
