@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import json
+import time
 from typing import Any
 
 from openai import OpenAI
 
 from app.config import settings
+from app.observability import aggregate_usage, response_observation
 from app.tools.policy_retriever import retrieve_policy
 from app.tools.process_analytics import (
     analyze_process,
@@ -277,7 +279,17 @@ def ask_agent(
     if previous_response_id:
         initial_request["previous_response_id"] = previous_response_id
 
+    run_started = time.perf_counter()
+    model_started = time.perf_counter()
     response = client.responses.create(**initial_request)
+    model_trace = [
+        response_observation(
+            response,
+            phase="initial",
+            latency_ms=(time.perf_counter() - model_started) * 1000,
+            parent_response_id=previous_response_id,
+        )
+    ]
 
     trace: list[dict[str, Any]] = []
     response_ids = [response.id]
@@ -292,6 +304,10 @@ def ask_agent(
                 "model": settings.openai_model,
                 "tool_turns": turn - 1,
                 "tool_call_count": len(trace),
+                "model_call_count": len(model_trace),
+                "elapsed_ms": round((time.perf_counter() - run_started) * 1000, 2),
+                "usage": aggregate_usage(model_trace),
+                "model_response_trace": model_trace,
                 "applied_preferences": preferences or {},
                 "answer": response.output_text,
                 "tool_trace": trace,
@@ -300,13 +316,16 @@ def ask_agent(
         tool_outputs = []
         for call in calls:
             args = json.loads(call.arguments)
+            tool_started = time.perf_counter()
             result = _dispatch(call.name, args)
+            tool_latency_ms = (time.perf_counter() - tool_started) * 1000
             trace.append(
                 {
                     "turn": turn,
                     "call_id": call.call_id,
                     "tool": call.name,
                     "arguments": args,
+                    "latency_ms": round(tool_latency_ms, 2),
                     "result": result,
                 }
             )
@@ -318,12 +337,22 @@ def ask_agent(
                 }
             )
 
+        parent_id = response.id
+        model_started = time.perf_counter()
         response = client.responses.create(
             model=settings.openai_model,
             instructions=instructions,
             tools=TOOLS,
-            previous_response_id=response.id,
+            previous_response_id=parent_id,
             input=tool_outputs,
+        )
+        model_trace.append(
+            response_observation(
+                response,
+                phase="tool_followup",
+                latency_ms=(time.perf_counter() - model_started) * 1000,
+                parent_response_id=parent_id,
+            )
         )
         response_ids.append(response.id)
 
