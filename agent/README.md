@@ -91,13 +91,22 @@ agent/
 │       ├── scenario_simulator.py
 │       └── policy_retriever.py
 ├── docs/
-│   └── project_plan.md
+│   ├── project_plan.md
+│   ├── business_scenario_v1.md
+│   ├── data_readiness_review.md
+│   └── scenario_v1_benchmark.md
 ├── evals/
-│   └── eval_cases.json
+│   ├── eval_cases.json
+│   ├── scenario_v1_ground_truth.json
+│   └── scenario_v1_benchmark.json
 ├── policies/
 │   └── o2c_sla_policy.md
+├── scripts/
+│   └── calibrate_scenario_v1.py
 ├── tests/
-│   └── test_scenario_simulator.py
+│   ├── test_scenario_simulator.py
+│   ├── test_process_analytics.py
+│   └── test_workflow.py
 ├── .env.example
 └── requirements.txt
 ```
@@ -179,6 +188,21 @@ curl -X POST http://localhost:8000/agent/ask \
     "question": "Investigate why O2C cycle time worsened in Q3 versus Q2. Identify the stage that deteriorated most, drill into the strongest driver, and test a realistic improvement scenario."
   }'
 ```
+
+## Validated Scenario V1 benchmark
+
+Two clean GitHub Actions runs produced identical results:
+
+- Q2 total O2C: **33.28 days**
+- Q3 total O2C: **33.71 days**
+- Order-to-ship: **1.48 → 2.09 days** (+0.61; +41.22%)
+- Marketplace order-to-ship: **1.45 → 4.62 days** (+3.17)
+- Web order-to-ship: 1.54 → 1.54 days
+- InsideSales order-to-ship: 1.44 → 1.47 days
+
+The longest absolute stage, invoice-to-payment, actually improves slightly (30.76 → 30.49 days), which makes the benchmark a useful test of whether the system distinguishes **deterioration** from **absolute duration**.
+
+See `evals/scenario_v1_benchmark.json` and `docs/scenario_v1_benchmark.md`.
 
 ## Evaluation direction
 
