@@ -37,11 +37,11 @@ jobs:
       - name: Start MySQL
         run: docker compose up -d db
 
-      - name: Wait for MySQL
+      - name: Wait for MySQL initialization
         run: |
           for attempt in {1..60}; do
-            if docker compose exec -T db mysqladmin ping -uroot -proot --silent; then
-              echo "MySQL is ready."
+            if docker compose exec -T db sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SELECT 1"' >/dev/null 2>&1; then
+              echo "MySQL initialization is complete."
               exit 0
             fi
             sleep 2
@@ -51,10 +51,10 @@ jobs:
           exit 1
 
       - name: Load base O2C dataset
-        run: docker compose exec -T db mysql -uroot -proot < sql/complete_setup.sql
+        run: docker compose exec -T db sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD"' < sql/complete_setup.sql
 
       - name: Apply Scenario V1
-        run: docker compose exec -T db mysql -uroot -proot < agent/data/scenario_v1_marketplace_bottleneck.sql
+        run: docker compose exec -T db sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD"' < agent/data/scenario_v1_marketplace_bottleneck.sql
 
       - name: Capture SQL validation output
         run: |
