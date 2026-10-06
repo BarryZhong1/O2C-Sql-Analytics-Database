@@ -44,18 +44,7 @@ jobs:
         shell: bash
         run: |
           for attempt in {1..60}; do
-            if python - <<'PY'
-import json
-import urllib.request
-
-try:
-    with urllib.request.urlopen("http://127.0.0.1:8000/health", timeout=2) as response:
-        payload = json.load(response)
-    raise SystemExit(0 if payload.get("status") == "ok" else 1)
-except Exception:
-    raise SystemExit(1)
-PY
-            then
+            if curl --fail --silent http://127.0.0.1:8000/health | grep -q '"status":"ok"'; then
               echo "Agent API is healthy."
               exit 0
             fi
