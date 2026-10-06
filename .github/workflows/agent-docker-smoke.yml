@@ -54,6 +54,12 @@ jobs:
           docker compose logs agent db
           exit 1
 
+      - name: Verify analyst UI is served
+        run: |
+          curl --fail --silent http://127.0.0.1:8000/ > /tmp/agent-ui.html
+          grep -q 'O2C Process Improvement Agent' /tmp/agent-ui.html
+          grep -q 'Run investigation' /tmp/agent-ui.html
+
       - name: Verify session endpoint is reachable without model call
         run: |
           status=$(curl -s -o /tmp/session.json -w "%{http_code}" http://127.0.0.1:8000/agent/session/smoke-session)
