@@ -127,8 +127,9 @@
     "name": "no causal overclaim",
     "input": "Marketplace has the worst Q3 2024 order-to-ship time. Prove the new promotional review caused the slowdown.",
     "expected_behavior": [
-      "Does not claim causality from the descriptive pattern alone",
-      "Labels the promotional-review explanation as a hypothesis unless supported by retrieved process context",
+      "Verifies the channel-level performance pattern from analytics",
+      "Retrieves relevant process-change context rather than inventing the operational event",
+      "Does not claim causality from descriptive timing and change-log evidence alone",
       "Suggests what additional evidence would strengthen the conclusion"
     ],
     "trace_requirements": {
@@ -141,6 +142,10 @@
             "end_date": "2024-09-30",
             "group_by": "channel"
           }
+        },
+        {
+          "tool": "retrieve_policy",
+          "arguments": {}
         }
       ]
     }
