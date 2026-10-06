@@ -1,0 +1,81 @@
+name: Agent CI
+
+on:
+  push:
+    branches:
+      - feature/process-improvement-agent
+    paths:
+      - "agent/**"
+      - "sql/complete_setup.sql"
+      - ".github/workflows/agent-ci.yml"
+  pull_request:
+    paths:
+      - "agent/**"
+      - "sql/complete_setup.sql"
+      - ".github/workflows/agent-ci.yml"
+
+jobs:
+  scenario-benchmark:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Start MySQL
+        run: docker compose up -d db
+
+      - name: Wait for MySQL
+        shell: bash
+        run: |
+          for i in {1..60}; do
+            if docker compose exec -T db mysqladmin ping -uroot -proot --silent; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose logs db
+          exit 1
+
+      - name: Build reproducible O2C dataset
+        run: docker compose exec -T db mysql -uroot -proot < sql/complete_setup.sql
+
+      - name: Apply controlled Scenario V1
+        run: docker compose exec -T db mysql -uroot -proot < agent/data/scenario_v1_marketplace_bottleneck.sql
+
+      - name: Run SQL validation report
+        run: |
+          mkdir -p agent/artifacts
+          docker compose exec -T db mysql -uroot -proot --table o2c < agent/sql/validate_scenario_v1.sql | tee agent/artifacts/scenario_v1_validation.txt
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: agent/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r agent/requirements.txt
+
+      - name: Run deterministic unit tests
+        working-directory: agent
+        run: pytest -q
+
+      - name: Benchmark injected business scenario
+        env:
+          DATABASE_URL: mysql+pymysql://app:app_pw@127.0.0.1:3306/o2c
+          BENCHMARK_OUTPUT: agent/artifacts/scenario_v1_benchmark.json
+        run: python agent/scripts/benchmark_scenario.py
+
+      - name: Reset Scenario V1
+        if: always()
+        run: docker compose exec -T db mysql -uroot -proot < agent/data/reset_scenario_v1.sql
+
+      - name: Upload benchmark artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-scenario-v1-benchmark
+          path: agent/artifacts/
+          if-no-files-found: warn
