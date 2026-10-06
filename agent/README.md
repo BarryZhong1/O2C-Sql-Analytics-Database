@@ -32,8 +32,9 @@ This agent extends that foundation from **descriptive analytics** to **AI-assist
 
 ### Supported investigation questions
 - Why did total O2C cycle time increase?
+- Which cash-cycle stage deteriorated the most versus a baseline period?
 - Which customer segment or sales channel is driving a delay?
-- Which O2C stage is the current bottleneck?
+- Are customers actually paying late versus contractual due dates, or do they simply have longer terms?
 - What happens if order-to-ship, ship-to-invoice, or invoice-to-payment time improves by X%?
 
 ### Tools
@@ -147,16 +148,25 @@ docker compose exec -T db mysql -uroot -proot < agent/data/reset_scenario_v1.sql
 
 See `docs/business_scenario_v1.md` for the business story and `docs/data_readiness_review.md` for why a controlled overlay is used.
 
+After applying Scenario V1, calibrate the benchmark:
+
+```bash
+cd agent
+python scripts/calibrate_scenario_v1.py
+```
+
+The calibration exits non-zero if the primary injected pattern is not strong enough for a reliable demo/evaluation.
+
 Fixed workflow baseline:
 
 ```bash
 curl -X POST http://localhost:8000/workflow/investigate \
   -H "Content-Type: application/json" \
   -d '{
-    "start_date": "2024-04-01",
-    "end_date": "2024-06-30",
-    "compare_start_date": "2024-01-01",
-    "compare_end_date": "2024-03-31"
+    "start_date": "2024-07-01",
+    "end_date": "2024-09-30",
+    "compare_start_date": "2024-04-01",
+    "compare_end_date": "2024-06-30"
   }'
 ```
 
@@ -166,7 +176,7 @@ Agent:
 curl -X POST http://localhost:8000/agent/ask \
   -H "Content-Type: application/json" \
   -d '{
-    "question": "Investigate why O2C cycle time worsened in Q2 versus Q1. Drill down into the strongest driver and test a realistic improvement scenario."
+    "question": "Investigate why O2C cycle time worsened in Q3 versus Q2. Identify the stage that deteriorated most, drill into the strongest driver, and test a realistic improvement scenario."
   }'
 ```
 
@@ -174,13 +184,15 @@ curl -X POST http://localhost:8000/agent/ask \
 
 The initial eval set focuses on:
 - correct tool selection;
+- ranking deterioration rather than simply choosing the longest stage;
 - grounded use of database evidence;
+- payment-term-normalized collection analysis;
 - numerical consistency with deterministic tools;
 - correct separation of observation vs. hypothesis;
 - policy/SLA grounding;
 - safe behavior when the user asks the agent to make an operational change.
 
-See `evals/eval_cases.json`.
+See `evals/eval_cases.json` and `evals/README.md`.
 
 ## Roadmap
 
