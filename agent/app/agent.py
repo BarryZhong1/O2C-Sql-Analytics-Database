@@ -224,17 +224,25 @@ def _dispatch(name: str, args: dict[str, Any]) -> dict[str, Any]:
     raise ValueError(f"Unknown tool: {name}")
 
 
-def ask_agent(question: str, max_turns: int = 8) -> dict[str, Any]:
+def ask_agent(
+    question: str,
+    max_turns: int = 8,
+    previous_response_id: str | None = None,
+) -> dict[str, Any]:
     if not settings.openai_api_key:
         raise RuntimeError("OPENAI_API_KEY is not configured.")
 
     client = OpenAI(api_key=settings.openai_api_key)
-    response = client.responses.create(
-        model=settings.openai_model,
-        instructions=SYSTEM_PROMPT,
-        tools=TOOLS,
-        input=[{"role": "user", "content": question}],
-    )
+    initial_request: dict[str, Any] = {
+        "model": settings.openai_model,
+        "instructions": SYSTEM_PROMPT,
+        "tools": TOOLS,
+        "input": [{"role": "user", "content": question}],
+    }
+    if previous_response_id:
+        initial_request["previous_response_id"] = previous_response_id
+
+    response = client.responses.create(**initial_request)
 
     trace: list[dict[str, Any]] = []
     response_ids = [response.id]
@@ -245,6 +253,7 @@ def ask_agent(question: str, max_turns: int = 8) -> dict[str, Any]:
             return {
                 "response_id": response.id,
                 "response_ids": response_ids,
+                "parent_response_id": previous_response_id,
                 "model": settings.openai_model,
                 "tool_turns": turn - 1,
                 "tool_call_count": len(trace),
