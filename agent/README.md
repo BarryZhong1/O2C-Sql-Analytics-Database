@@ -21,17 +21,12 @@ The LLM is the **investigator/orchestrator**. SQL and Python tools perform quant
 
 ## Why this project
 
-The existing repository already models the end-to-end O2C process and provides:
-- order, customer, shipment, invoice, payment, return, product, and inventory data;
-- an operational-performance view with stage-level cycle times;
-- customer, product, cash-flow, and order summary views;
-- business requirements and KPI definitions.
+The repository already models the end-to-end O2C process with order, customer, shipment, invoice, payment, return, product, and inventory data plus analytical views and KPI definitions.
 
-This agent extends that foundation from **descriptive analytics** to **AI-assisted process diagnosis and scenario planning**.
+This agent extends that foundation from **descriptive analytics** to **AI-assisted process diagnosis and scenario planning** while retaining deterministic calculations, explicit approval boundaries, evaluation, memory design, and deployability.
 
-## MVP scope
+## Supported business questions
 
-### Supported investigation questions
 - Why did total O2C cycle time increase?
 - Which cash-cycle stage deteriorated the most versus a baseline period?
 - Which customer segment or sales channel is driving a delay?
@@ -39,58 +34,62 @@ This agent extends that foundation from **descriptive analytics** to **AI-assist
 - Is a known process change temporally consistent with the measured deterioration?
 - What happens if order-to-ship, ship-to-invoice, or invoice-to-payment time improves by X%?
 
+## Architecture
+
+```text
+Business user / analyst UI
+          |
+          v
+      FastAPI service
+          |
+          +--> short-term session state (SQLite + previous_response_id)
+          +--> bounded analyst preferences
+          |
+          v
+AI investigator (OpenAI Responses API)
+          |
+          +------------------+-----------------------+
+          |                  |                       |
+          v                  v                       v
+ Process analytics     Business context       Scenario simulator
+ (SQL / MySQL)         (local retrieval)       (deterministic Python)
+          |                  |                       |
+          +------------------+-----------------------+
+                             |
+                             v
+                 Evidence-backed recommendation
+                             |
+                             v
+                      Human approval
+```
+
 ### Tools
+
 1. **Process analytics** — whitelisted SQL metrics/dimensions with deterministic period comparisons and rankings.
 2. **Scenario simulator** — deterministic Python calculations for process-improvement what-if analysis.
 3. **Business-context retrieval** — local retrieval across SLA, guardrail, and process-change Markdown documents.
 
 ### Guardrails
+
 - Read-only analytics only.
 - No free-form model-generated SQL is executed.
 - Metrics and dimensions are whitelisted.
 - Scenario outputs are estimates, not causal guarantees.
 - Recommendations distinguish observed evidence, assumptions, and hypotheses.
-- Process change logs can support a hypothesis but are not causal proof.
-- No operational change is applied automatically.
-
-## Architecture
-
-```text
-Business user
-     |
-     v
-FastAPI service
-     |
-     +--> optional persistent session state (SQLite)
-     |
-     v
-AI investigator (Responses API)
-     |
-     +------------------+-----------------------+
-     |                  |                       |
-     v                  v                       v
-Process analytics   Business context       Scenario simulator
-(SQL / MySQL)       (local retrieval)       (deterministic Python)
-     |                  |                       |
-     +------------------+-----------------------+
-                        |
-                        v
-            Evidence-backed recommendation
-                        |
-                        v
-                 Human decision / approval
-```
+- Process-change logs can support a hypothesis but are not causal proof.
+- No operational or policy change is applied automatically.
 
 ## Project structure
 
 ```text
 agent/
 ├── app/
-│   ├── agent.py                 # tool-calling loop + observable trace
+│   ├── agent.py                 # Responses API tool loop + trace
 │   ├── config.py                # environment settings
 │   ├── db.py                    # O2C SQLAlchemy connection
-│   ├── main.py                  # FastAPI endpoints
-│   ├── state.py                 # persistent short-term session state
+│   ├── main.py                  # FastAPI API + analyst UI route
+│   ├── state.py                 # sessions + bounded preferences
+│   ├── static/index.html        # lightweight analyst UI
 │   ├── workflow.py              # fixed Workflow v1 baseline
 │   └── tools/
 │       ├── process_analytics.py
@@ -103,11 +102,16 @@ agent/
 │   ├── project_plan.md
 │   ├── business_scenario_v1.md
 │   ├── data_readiness_review.md
-│   └── scenario_v1_benchmark.md
+│   ├── scenario_v1_benchmark.md
+│   ├── memory_design.md
+│   └── deployment.md
 ├── evals/
 │   ├── README.md
 │   ├── eval_cases.json
 │   ├── trace_evaluator.py
+│   ├── semantic_evaluator.py
+│   ├── semantic_rubric.json
+│   ├── llm_judge.py
 │   ├── scenario_v1_ground_truth.json
 │   └── scenario_v1_benchmark.json
 ├── policies/
@@ -116,107 +120,71 @@ agent/
 ├── scripts/
 │   ├── calibrate_scenario_v1.py
 │   ├── evaluate_agent_run.py
-│   └── run_live_evals.py
+│   ├── run_live_evals.py
+│   └── run_semantic_judge.py
 ├── sql/
 │   └── validate_scenario_v1.sql
+├── Dockerfile
 └── tests/
-    ├── test_policy_retriever.py
-    ├── test_process_analytics.py
-    ├── test_scenario_simulator.py
-    ├── test_state.py
-    ├── test_trace_evaluator.py
-    └── test_workflow.py
 ```
 
-## Quick start
+## Quick start with Docker
 
-From the repository root, start MySQL and build the deterministic O2C dataset:
+From the repository root:
 
 ```bash
-docker compose up -d
+export OPENAI_API_KEY="..."
+docker compose up -d --build db agent adminer
+```
+
+Build the deterministic O2C dataset and apply the controlled Scenario V1 overlay:
+
+```bash
 docker compose exec -T db mysql -uroot -proot < sql/complete_setup.sql
-```
-
-Apply the controlled Scenario V1 overlay:
-
-```bash
 docker compose exec -T db mysql -uroot -proot < agent/data/scenario_v1_marketplace_bottleneck.sql
-docker compose exec -T db mysql -uroot -proot < agent/sql/validate_scenario_v1.sql
 ```
 
-Then start the agent service:
+Open the analyst UI:
 
-```bash
-cd agent
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
-# add OPENAI_API_KEY to .env
-uvicorn app.main:app --reload --port 8000
+```text
+http://localhost:8000/
 ```
 
-Health check:
+Other useful endpoints:
 
-```bash
-curl http://localhost:8000/health
+```text
+http://localhost:8000/health
+http://localhost:8000/docs
+http://localhost:8080   # Adminer
 ```
 
-To restore the base synthetic timestamps:
+See `docs/deployment.md` for the full deployment guide.
 
-```bash
-docker compose exec -T db mysql -uroot -proot < agent/data/reset_scenario_v1.sql
-```
+## Stateful investigations and bounded preferences
 
-## Fixed workflow baseline
+A named session stores only the latest Responses API response ID and timestamps so follow-up questions can continue the investigation without duplicating the raw transcript in the local state database.
 
-```bash
-curl -X POST http://localhost:8000/workflow/investigate \
-  -H "Content-Type: application/json" \
-  -d '{
-    "start_date": "2024-07-01",
-    "end_date": "2024-09-30",
-    "compare_start_date": "2024-04-01",
-    "compare_end_date": "2024-06-30"
-  }'
-```
-
-## Stateless agent
-
-```bash
-curl -X POST http://localhost:8000/agent/ask \
-  -H "Content-Type: application/json" \
-  -d '{
-    "question": "Investigate why O2C cycle time worsened in Q3 versus Q2. Identify the stage that deteriorated most, drill into the strongest driver, and test a realistic improvement scenario."
-  }'
-```
-
-## Stateful investigation session
-
-The service can persist the latest Responses API response ID for a named session. This provides short-term cross-request continuity without storing raw customer-level conversation data locally.
-
-First turn:
+Example:
 
 ```bash
 curl -X POST http://localhost:8000/agent/session/demo-1/ask \
   -H "Content-Type: application/json" \
-  -d '{"question":"Compare Q3 O2C performance with Q2 and identify the stage that deteriorated most."}'
+  -d '{
+    "question": "Compare Q3 O2C performance with Q2 and identify the stage that deteriorated most.",
+    "profile_id": "analyst-demo"
+  }'
 ```
 
-Follow-up:
+Longer-lived analyst memory is deliberately bounded to four whitelisted preferences:
 
-```bash
-curl -X POST http://localhost:8000/agent/session/demo-1/ask \
-  -H "Content-Type: application/json" \
-  -d '{"question":"Now drill into the sales channel driving that deterioration."}'
-```
+- `detail_level`
+- `preferred_breakdown`
+- `include_risks`
+- `include_scenario_if_relevant`
 
-Inspect/reset session state:
+Preferences affect presentation/default drill-down style only. They cannot override evidence, KPI definitions, current user instructions, or human-approval boundaries.
 
-```bash
-curl http://localhost:8000/agent/session/demo-1
-curl -X DELETE http://localhost:8000/agent/session/demo-1
-```
+See `docs/memory_design.md`.
 
 ## Validated Scenario V1 benchmark
 
@@ -226,47 +194,52 @@ Repeated clean GitHub Actions runs reproduce the controlled benchmark:
 - Q3 total O2C: **33.71 days**
 - Order-to-ship: **1.48 → 2.09 days** (+0.61; +41.22%)
 - Marketplace order-to-ship: **1.45 → 4.62 days** (+3.17)
-- Web order-to-ship: 1.54 → 1.54 days
-- InsideSales order-to-ship: 1.44 → 1.47 days
+- Web order-to-ship: **1.54 → 1.54 days**
+- InsideSales order-to-ship: **1.44 → 1.47 days**
+- Invoice-to-payment: **30.76 → 30.49 days**
 
-The longest absolute stage, invoice-to-payment, actually improves slightly (30.76 → 30.49 days). This deliberately tests whether the system distinguishes **deterioration** from **absolute duration**.
+The longest absolute stage, invoice-to-payment, slightly improves. This deliberately tests whether the system distinguishes **largest deterioration** from **longest absolute duration**.
 
 See `evals/scenario_v1_benchmark.json` and `docs/scenario_v1_benchmark.md`.
 
-## Evaluation
+## Evaluation stack
 
-Calibrate the controlled data benchmark:
+The project uses layered evaluation rather than one subjective score:
+
+1. **Scenario calibration** — verifies the injected benchmark is strong and reproducible.
+2. **Deterministic trace evaluation** — checks required tools, arguments, forbidden actions, and bounded behavior.
+3. **Semantic rubric** — scores evidence grounding, diagnostic reasoning, causal discipline, scenario transparency, decision usefulness, risks, and approval boundaries.
+4. **Optional LLM-as-Judge** — applies the documented rubric to live answers while leaving numerical/tool truth to deterministic checks.
+
+Run all live behavior cases after configuring the database and API key:
 
 ```bash
 cd agent
-python scripts/calibrate_scenario_v1.py
-```
-
-Evaluate one captured agent response against deterministic trace requirements:
-
-```bash
-python scripts/evaluate_agent_run.py eval_005 path/to/agent_run.json
-```
-
-Run the live behavior set when the database and API key are configured:
-
-```bash
 python scripts/run_live_evals.py
+python scripts/run_semantic_judge.py
 ```
 
-The evaluation stack separates:
-- deterministic numerical checks;
-- deterministic tool/argument trace checks;
-- later semantic/rubric evaluation for causal wording, evidence synthesis, and decision usefulness.
+A manual GitHub Actions workflow, **Agent live behavior evals**, rebuilds Scenario V1, recalibrates it, runs all seven live cases, optionally applies the semantic judge, and uploads the JSON reports. It is manual-only to avoid API cost on every push.
 
-See `evals/eval_cases.json` and `evals/README.md`.
+See `evals/README.md`.
 
-## Roadmap
+## CI / deployment validation
+
+The branch includes separate workflows for:
+
+- Python compilation and unit tests;
+- deterministic Scenario V1 integration calibration;
+- Docker/Compose build and API/UI smoke testing;
+- manually triggered API-backed live behavior evaluation.
+
+The automatic Docker smoke test does **not** call the model API.
+
+## Roadmap status
 
 - **P1 — Workflow baseline:** implemented and benchmarked.
-- **P2 — Agent tools:** implemented; live behavior validation next.
-- **P3 — Context/memory:** persistent short-term session state implemented; bounded long-term preferences next.
-- **P4 — Quality:** calibration, trace checks, and CI implemented; semantic rubric/LLM judge next.
-- **P5 — Deployment:** Dockerized agent API, lightweight analyst UI, and final demo/report.
+- **P2 — Agent tools:** implemented with dynamic tool selection and observable traces.
+- **P3 — Context/memory:** short-term session state and bounded analyst preferences implemented.
+- **P4 — Quality:** deterministic calibration/trace checks, semantic rubric, optional LLM judge, and live-eval runner implemented; full API-backed results still need to be recorded.
+- **P5 — Deployment/demo:** Dockerized API and lightweight analyst UI implemented; final demo/evaluation report remains.
 
-See `docs/project_plan.md` for the detailed implementation plan.
+The next evidence-generating milestone is the full live seven-case evaluation against Scenario V1, followed by prompt/tool tuning only where the recorded failures justify it.
