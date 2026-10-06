@@ -27,15 +27,19 @@ Operations analyst, business analyst, finance operations analyst, or process-imp
 - Final answer uses measured values returned by tools.
 - Agent distinguishes observation, hypothesis, and assumption.
 - Agent can continue a prior investigation through explicit session state.
+- Analyst reporting preferences can persist through a bounded, inspectable profile.
+- User can run the system through a lightweight browser UI or API.
 - Agent never executes business changes.
 
 ### Technical
 - No model-generated SQL is executed directly.
 - Tool arguments use bounded schemas and whitelisted metrics/dimensions.
 - Scenario math is deterministic and unit tested.
-- API exposes fixed workflow, stateless agent, and stateful-session endpoints.
+- API exposes fixed workflow, stateless agent, stateful-session, and preference endpoints.
 - Controlled Scenario V1 has a reproducible hidden ground truth.
 - Deterministic evals check tool choice/arguments before semantic judging.
+- Deployment is containerized and smoke tested without requiring model API calls.
+- Live model behavior can be evaluated manually in GitHub Actions with stored artifacts.
 
 ## 5. Version plan
 
@@ -50,7 +54,7 @@ Implemented:
 - fixed cycle-time investigation endpoint;
 - deterministic Scenario V1 dataset/benchmark.
 
-### P2 — Agent v1 — implemented / validating
+### P2 — Agent v1 — implemented / awaiting recorded live results
 Goal: allow the model to choose the next analysis step from tool results.
 
 Implemented:
@@ -62,31 +66,32 @@ Implemented:
 - max-turn stop condition;
 - explicit human-approval and causal-language guardrails.
 
-Remaining:
+Remaining evidence milestone:
 - run the full live eval set against a configured API key;
 - tune prompt/tool descriptions only from observed failures.
 
-### P3 — Stateful context — in progress
-Goal: make repeated investigations useful without stuffing full history into every prompt.
+### P3 — Stateful context and bounded memory — implemented
+Goal: make repeated investigations useful without stuffing full history into every prompt or storing unrestricted memory.
 
-Implemented P3a:
+Implemented short-term state:
 - persistent local SQLite session store;
 - Responses API `previous_response_id` persisted by session;
 - stateful `/agent/session/{session_id}/ask` endpoint;
-- session inspection/reset endpoints;
-- local state DB excluded from version control.
+- session inspection/reset endpoints.
 
-Next P3b candidate memory:
-- preferred KPI definitions;
-- preferred comparison windows;
-- approved scenario assumptions;
-- reporting/detail preferences;
-- compact summaries of prior investigations.
+Implemented bounded long-term analyst preferences:
+- `detail_level`;
+- `preferred_breakdown`;
+- `include_risks`;
+- `include_scenario_if_relevant`;
+- explicit profile inspect/update/reset API;
+- unknown memory keys rejected;
+- preferences cannot override evidence, KPI definitions, current instructions, or approval boundaries.
 
-Do not store sensitive customer-level details by default. Long-term preference memory should be explicit, bounded, inspectable, and separable from raw conversation history.
+The state store is not used as a second copy of raw customer-level transactional data or unrestricted conversation history.
 
-### P4 — Observability and evaluation — in progress
-Goal: prove that agent v1 improves on the fixed workflow for ambiguous questions.
+### P4 — Observability and evaluation — implemented / awaiting live artifact
+Goal: prove that agent v1 follows the intended business reasoning and safety boundaries on a controlled benchmark.
 
 Implemented:
 - reproducible controlled Scenario V1;
@@ -95,7 +100,12 @@ Implemented:
 - tool-call trace with turn/call metadata;
 - machine-checkable trace requirements in `eval_cases.json`;
 - deterministic trace evaluator;
-- single-run and batch live-eval CLI scripts.
+- single-run and batch live-eval CLI scripts;
+- seven-dimension semantic rubric;
+- deterministic rubric aggregation and critical-dimension failure rule;
+- optional LLM-as-Judge layer that does not receive hidden Scenario V1 ground truth;
+- manual API-backed GitHub Actions workflow;
+- Markdown evaluation-summary generator.
 
 Evaluation dimensions:
 - tool-selection correctness;
@@ -105,24 +115,31 @@ Evaluation dimensions:
 - policy/context use;
 - causality discipline;
 - human-approval compliance;
-- unnecessary-tool-call rate;
-- completion rate.
+- completion rate;
+- semantic decision usefulness and uncertainty communication.
 
-Next:
-- add a documented semantic rubric;
-- optionally add LLM-as-Judge only for criteria that cannot be graded deterministically;
-- retain deterministic calculations as authoritative for numeric/tool facts.
+Remaining evidence milestone:
+- capture the first complete seven-case live report and semantic report;
+- retain those artifacts for the final portfolio evaluation discussion.
 
-### P5 — Deployment and demo
+### P5 — Deployment and demo — mostly implemented
 Goal: present a deployable business system rather than a notebook.
 
-Planned:
-- Dockerfile for the agent service;
-- production FastAPI configuration;
-- lightweight analyst UI;
-- demo script and architecture diagram;
-- final evaluation report;
-- optional multi-agent extension only if a real coordination need emerges.
+Implemented:
+- non-root agent Dockerfile;
+- Compose agent + MySQL + Adminer stack;
+- persistent agent-state volume;
+- service health checks;
+- automatic Docker build/API/UI smoke test;
+- lightweight analyst UI served by FastAPI;
+- explicit trace and response-metadata inspection in the UI;
+- deployment guide;
+- five-minute demo script;
+- evaluation-summary generator.
+
+Remaining:
+- record a complete API-backed evaluation result;
+- turn the generated evaluation summary into the final project report after observed live results are available.
 
 ## 6. Validated demo case
 
@@ -156,7 +173,9 @@ In scope:
 - business-rule and process-change retrieval;
 - transparent scenario modeling;
 - recommendation drafting;
-- stateful investigation continuity.
+- stateful investigation continuity;
+- bounded analyst preferences;
+- deployment and evaluation tooling.
 
 Out of scope for the MVP:
 - automatic operational actions;
@@ -164,7 +183,8 @@ Out of scope for the MVP:
 - causal inference claims;
 - optimization with unvalidated cost/capacity assumptions;
 - unrestricted enterprise-wide analytics;
-- autonomous multi-agent orchestration.
+- unrestricted long-term memory;
+- autonomous multi-agent orchestration without a demonstrated coordination need.
 
 ## 8. Extension ideas
 
