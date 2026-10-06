@@ -759,9 +759,9 @@ INSERT INTO db_info (info_key, info_value) VALUES
 ON DUPLICATE KEY UPDATE info_value = VALUES(info_value);
 
 -- Display comprehensive setup summary
-SELECT '========================================' as separator;
+SELECT '========================================' as separator_line;
 SELECT 'O2C DATABASE SETUP COMPLETE!' as setup_status;
-SELECT '========================================' as separator;
+SELECT '========================================' as separator_line;
 
 -- Data volume summary
 SELECT 'DATA VOLUMES' as summary_section;
@@ -785,7 +785,7 @@ UNION ALL
 SELECT 'returns', COUNT(*), '3% return rate with reason codes' FROM returns;
 
 -- Business metrics summary
-SELECT '' as separator;
+SELECT '' as separator_line;
 SELECT 'KEY BUSINESS METRICS' as summary_section;
 
 SELECT 
@@ -830,7 +830,7 @@ SELECT
     'Key cash flow metric (target: <45 days)';
 
 -- Available business views
-SELECT '' as separator;
+SELECT '' as separator_line;
 SELECT 'BUSINESS INTELLIGENCE VIEWS READY' as summary_section;
 SELECT 
     'View Name' as view_name,
@@ -863,7 +863,7 @@ SELECT
     'O2C cycle time, delivery performance, SLA adherence';
 
 -- Next steps guidance
-SELECT '' as separator;
+SELECT '' as separator_line;
 SELECT 'NEXT STEPS' as guidance_section;
 SELECT '1. Explore data: SELECT * FROM vw_order_summary LIMIT 10;' as step_1;
 SELECT '2. Run analytics: Use queries from examples/dashboard_queries.sql' as step_2;
