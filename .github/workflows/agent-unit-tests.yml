@@ -39,4 +39,4 @@ jobs:
         run: python -m compileall app scripts tests
 
       - name: Run unit tests
-        run: pytest -q
+        run: python -m pytest -q
