@@ -569,6 +569,13 @@ BEGIN
         );
         
         SET v_order_id = LAST_INSERT_ID();
+
+        -- Keep the requested ship date tied to the synthetic order date rather
+        -- than the wall-clock date when the setup script happens to run.
+        -- This makes shipment SLA metrics reproducible across years.
+        UPDATE orders
+        SET requested_ship_date = DATE_ADD(DATE(order_ts), INTERVAL 2 DAY)
+        WHERE order_id = v_order_id;
         
         -- Add 1-6 items per order based on segment
         SET j = 1;
