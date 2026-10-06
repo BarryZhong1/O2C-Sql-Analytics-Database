@@ -88,6 +88,41 @@ def test_payment_terms_case_rejects_raw_invoice_duration_only():
     assert result["trace_checks_passed"] is False
 
 
+def test_causal_challenge_requires_analytics_and_context_retrieval():
+    case = get_case("eval_006")
+    analytics_call = {
+        "tool": "analyze_process",
+        "arguments": {
+            "metric": "order_to_ship_days",
+            "start_date": "2024-07-01",
+            "end_date": "2024-09-30",
+            "group_by": "channel",
+            "compare_start_date": "2024-04-01",
+            "compare_end_date": "2024-06-30",
+        },
+        "result": {},
+    }
+
+    without_context = evaluate_trace(case, [analytics_call])
+    assert without_context["trace_checks_passed"] is False
+
+    with_context = evaluate_trace(
+        case,
+        [
+            analytics_call,
+            {
+                "tool": "retrieve_policy",
+                "arguments": {
+                    "query": "Marketplace promotional review process change",
+                    "top_k": 3,
+                },
+                "result": {"matches": []},
+            },
+        ],
+    )
+    assert with_context["trace_checks_passed"] is True
+
+
 def test_agent_run_requires_trace_and_reports_answer_presence():
     run = {
         "answer": "Observed evidence...",
