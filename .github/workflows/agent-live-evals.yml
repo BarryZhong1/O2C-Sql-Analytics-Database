@@ -13,11 +13,19 @@ on:
         required: true
         default: true
         type: boolean
+  push:
+    branches:
+      - feature/process-improvement-agent
+    paths:
+      - "agent/evals/.run-live-evals"
 
 jobs:
   live-evals:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      EVAL_MODEL: ${{ github.event_name == 'workflow_dispatch' && inputs.model || 'gpt-5' }}
+      SEMANTIC_ENABLED: ${{ github.event_name == 'push' || inputs.semantic_judge }}
 
     steps:
       - name: Check out repository
@@ -78,7 +86,7 @@ jobs:
         working-directory: agent
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_MODEL: ${{ inputs.model }}
+          OPENAI_MODEL: ${{ env.EVAL_MODEL }}
           DATABASE_URL: mysql+pymysql://app:app_pw@localhost:3306/o2c
           POLICY_PATH: policies
           STATE_DB_PATH: artifacts/live-eval-state.db
@@ -87,12 +95,12 @@ jobs:
 
       - name: Run semantic rubric judge
         id: semantic
-        if: ${{ inputs.semantic_judge && hashFiles('agent/artifacts/live_eval_report.json') != '' }}
+        if: ${{ env.SEMANTIC_ENABLED == 'true' && hashFiles('agent/artifacts/live_eval_report.json') != '' }}
         continue-on-error: true
         working-directory: agent
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_MODEL: ${{ inputs.model }}
+          OPENAI_MODEL: ${{ env.EVAL_MODEL }}
           PYTHONPATH: .
         run: python scripts/run_semantic_judge.py --input artifacts/live_eval_report.json --output artifacts/semantic_eval_report.json
 
@@ -128,7 +136,7 @@ jobs:
             echo "Live deterministic trace evaluation failed."
             failed=1
           fi
-          if [ "${{ inputs.semantic_judge }}" = "true" ] && [ "${{ steps.semantic.outcome }}" != "success" ]; then
+          if [ "$SEMANTIC_ENABLED" = "true" ] && [ "${{ steps.semantic.outcome }}" != "success" ]; then
             echo "Semantic rubric evaluation failed or did not complete."
             failed=1
           fi
