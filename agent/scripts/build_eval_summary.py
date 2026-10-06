@@ -45,6 +45,54 @@ def _status_mark(value: bool | None) -> str:
     return "N/A"
 
 
+def _observability_totals(live: dict[str, Any]) -> dict[str, Any]:
+    completed_runs = [
+        item.get("agent_run") or {}
+        for item in live.get("results", [])
+        if item.get("status") == "completed"
+    ]
+    elapsed_values = [
+        run["elapsed_ms"]
+        for run in completed_runs
+        if isinstance(run.get("elapsed_ms"), (int, float))
+    ]
+
+    token_fields = (
+        "input_tokens",
+        "output_tokens",
+        "total_tokens",
+        "cached_input_tokens",
+        "reasoning_tokens",
+    )
+    token_totals = {field: 0 for field in token_fields}
+    model_call_count = 0
+    runs_with_usage = 0
+
+    for run in completed_runs:
+        usage = run.get("usage") or {}
+        if usage:
+            runs_with_usage += 1
+        for field in token_fields:
+            value = usage.get(field)
+            if isinstance(value, int):
+                token_totals[field] += value
+        calls = run.get("model_call_count")
+        if isinstance(calls, int):
+            model_call_count += calls
+
+    return {
+        "runs_with_latency": len(elapsed_values),
+        "average_elapsed_ms": (
+            round(sum(elapsed_values) / len(elapsed_values), 2)
+            if elapsed_values
+            else None
+        ),
+        "runs_with_usage": runs_with_usage,
+        "model_call_count": model_call_count,
+        **token_totals,
+    }
+
+
 def build_summary(
     live: dict[str, Any],
     benchmark: dict[str, Any],
@@ -54,6 +102,7 @@ def build_summary(
     problem = benchmark["problem_period"]
     channels = benchmark["channel_order_to_ship_days"]
     semantic_by_case = _semantic_index(semantic)
+    observability = _observability_totals(live)
 
     lines = [
         "# Agent Evaluation Summary",
@@ -98,13 +147,35 @@ def build_summary(
     else:
         lines.append("- Semantic rubric: **not included in this summary**")
 
+    lines.extend(["", "## Runtime observability", ""])
+    if observability["runs_with_latency"]:
+        lines.append(
+            f"- Average end-to-end agent latency: **{observability['average_elapsed_ms']:.2f} ms**"
+        )
+    else:
+        lines.append("- Average end-to-end agent latency: **not captured**")
+
+    if observability["runs_with_usage"]:
+        lines.extend(
+            [
+                f"- Model calls across completed cases: **{observability['model_call_count']}**",
+                f"- Input tokens: **{observability['input_tokens']}**",
+                f"- Cached input tokens: **{observability['cached_input_tokens']}**",
+                f"- Output tokens: **{observability['output_tokens']}**",
+                f"- Reasoning tokens: **{observability['reasoning_tokens']}**",
+                f"- Total tokens: **{observability['total_tokens']}**",
+            ]
+        )
+    else:
+        lines.append("- Model token usage: **not captured**")
+
     lines.extend(
         [
             "",
             "## Per-case results",
             "",
-            "| Case | Status | Trace | Semantic | Score | Tool sequence |",
-            "|---|---|---|---|---:|---|",
+            "| Case | Status | Trace | Semantic | Score | Latency | Tokens | Tool sequence |",
+            "|---|---|---|---|---:|---:|---:|---|",
         ]
     )
 
@@ -114,6 +185,11 @@ def build_summary(
         trace_eval = item.get("deterministic_trace_eval") or {}
         trace_pass = trace_eval.get("trace_checks_passed")
         sequence = " → ".join(trace_eval.get("tool_sequence") or []) or "—"
+        agent_run = item.get("agent_run") or {}
+        elapsed = agent_run.get("elapsed_ms")
+        latency_text = f"{elapsed:.0f} ms" if isinstance(elapsed, (int, float)) else "—"
+        total_tokens = (agent_run.get("usage") or {}).get("total_tokens")
+        token_text = str(total_tokens) if isinstance(total_tokens, int) else "—"
 
         semantic_item = semantic_by_case.get(case_id) or {}
         semantic_eval = semantic_item.get("semantic_eval") or {}
@@ -128,7 +204,8 @@ def build_summary(
 
         lines.append(
             f"| `{case_id}` | {status} | {_status_mark(trace_pass)} | "
-            f"{_status_mark(semantic_pass)} | {score_text} | {sequence} |"
+            f"{_status_mark(semantic_pass)} | {score_text} | {latency_text} | "
+            f"{token_text} | {sequence} |"
         )
 
     failed_checks: list[str] = []
@@ -175,6 +252,8 @@ def build_summary(
             "## Interpretation",
             "",
             "Deterministic trace and numerical checks are authoritative for tool-use and KPI facts. Semantic scores are a separate quality layer for synthesis, causal discipline, decision usefulness, risks, and approval boundaries.",
+            "",
+            "Latency and token metrics describe runtime behavior and evaluation cost characteristics; they are not treated as answer-quality scores.",
             "",
             "Prompt or tool changes should be tied to recorded failures rather than tuned against hidden Scenario V1 ground truth.",
             "",
