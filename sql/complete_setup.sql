@@ -232,15 +232,13 @@ CREATE TABLE `audit_log` (
 
 -- =============================================
 -- 3. GENERATE LARGE REALISTIC DATASET
--- Creates 75 customers, 30 products, and 800+ orders with complete O2C flow
+-- Creates 25 customers, 18 products, and 800 orders with complete O2C flow
 -- =============================================
 
--- Insert 75 diversified customers across all segments and regions
--- SMB: 45 customers (60%) - typical small business distribution
--- Mid: 20 customers (27%) - regional distributors
--- Enterprise: 10 customers (13%) - major accounts
+-- Insert 25 diversified customers across all segments and regions
+-- SMB: 15 customers, Mid: 5 customers, Enterprise: 5 customers
 INSERT INTO customers (name, segment, region, payment_terms, credit_limit, created_at) VALUES
--- SMB Customers (45 total) - smaller credit limits, mix of payment terms
+-- SMB Customers (15 total) - smaller credit limits, mix of payment terms
 ('Sunrise Retail LLC', 'SMB', 'West', 'Net30', 45000, '2024-01-15 09:00:00'),
 ('Valley Sports Center', 'SMB', 'West', 'Net15', 35000, '2024-01-22 10:30:00'),
 ('Desert Electronics Co', 'SMB', 'West', 'Net30', 28000, '2024-02-01 14:15:00'),
@@ -251,29 +249,26 @@ INSERT INTO customers (name, segment, region, payment_terms, credit_limit, creat
 ('Arizona Outdoor Gear', 'SMB', 'West', 'Net30', 47000, '2024-03-15 14:30:00'),
 ('Tempe Tech Solutions', 'SMB', 'West', 'Net15', 29000, '2024-03-20 09:15:00'),
 ('Glendale General Store', 'SMB', 'West', 'Net30', 38000, '2024-04-01 11:45:00'),
--- Continue with remaining 35 SMB customers across all regions...
 ('Dallas Direct Sales', 'SMB', 'South', 'Net30', 46000, '2024-04-05 10:15:00'),
 ('Houston Hardware Hub', 'SMB', 'South', 'Net15', 33000, '2024-04-10 13:30:00'),
 ('Austin Electronics Express', 'SMB', 'South', 'Net30', 49000, '2024-04-15 15:20:00'),
 ('San Antonio Supplies', 'SMB', 'South', 'Net30', 41000, '2024-04-20 08:45:00'),
 ('Fort Worth Fashion', 'SMB', 'South', 'Prepaid', 22000, '2024-05-01 12:30:00'),
--- Mid-Market Customers (20 total) - larger credit limits, more Net45 terms
+-- Mid-Market Customers (5 total) - larger credit limits, more Net45 terms
 ('Regional Retail Chain West', 'Mid', 'West', 'Net30', 180000, '2024-01-10 09:30:00'),
 ('Western Wholesale Distribution', 'Mid', 'West', 'Net45', 220000, '2024-01-25 11:15:00'), -- Net45 for established bulk buyers
 ('California Commerce Corp', 'Mid', 'West', 'Net30', 195000, '2024-02-05 14:20:00'),
 ('Nevada Networks Inc', 'Mid', 'West', 'Net30', 160000, '2024-02-20 10:45:00'),
 ('Arizona Alliance Group', 'Mid', 'West', 'Net45', 240000, '2024-03-05 13:30:00'),
--- Enterprise Customers (10 total) - highest credit limits, negotiated terms
+-- Enterprise Customers (5 total) - highest credit limits, negotiated terms
 ('Global Retail Corporation', 'Enterprise', 'West', 'Net30', 850000, '2024-01-05 08:00:00'), -- Major retail chain
 ('National Distribution Network', 'Enterprise', 'North', 'Net45', 1200000, '2024-01-15 10:30:00'), -- Largest customer
 ('Mega Mall Systems Inc', 'Enterprise', 'South', 'Net30', 950000, '2024-02-01 12:15:00'),
 ('Continental Commerce Corp', 'Enterprise', 'East', 'Net45', 1100000, '2024-02-15 14:45:00'),
 ('American Retail Alliance', 'Enterprise', 'West', 'Net30', 900000, '2024-03-01 09:30:00');
 
--- Insert 30 products across 3 categories with realistic pricing
--- Electronics: High margin, lower volume (12 products)
--- Apparel: Volume sales, moderate margin (12 products)  
--- Home: Steady demand, seasonal variations (6 products)
+-- Insert 18 products across 3 categories with realistic pricing
+-- Electronics: 6 products; Apparel: 6 products; Home: 6 products
 INSERT INTO products (sku, category, unit_cost, list_price, safety_stock) VALUES
 -- Electronics Category - 40-60% gross margins typical
 ('ELE-SMARTPHONE-PRO', 'Electronics', 285.00, 599.99, 75), -- Premium smartphone
@@ -541,14 +536,14 @@ BEGIN
     -- Generate orders with realistic distribution
     WHILE i <= v_order_count DO
         
-        -- Select customer based on realistic segment distribution
-        -- 50% SMB (1-22), 35% Mid (23-27), 15% Enterprise (28-32)
+        -- Select only valid customer IDs while preserving the intended order mix:
+        -- 50% SMB (1-15), 35% Mid (16-20), 15% Enterprise (21-25).
         IF i <= v_order_count * 0.50 THEN
-            SET v_customer_id = 1 + MOD(i * 17, 22); -- SMB customers
+            SET v_customer_id = 1 + MOD(i * 7, 15); -- SMB customers
         ELSEIF i <= v_order_count * 0.85 THEN
-            SET v_customer_id = 23 + MOD(i * 3, 5); -- Mid customers
+            SET v_customer_id = 16 + MOD(i * 3, 5); -- Mid customers
         ELSE
-            SET v_customer_id = 28 + MOD(i * 2, 5); -- Enterprise customers
+            SET v_customer_id = 21 + MOD(i * 2, 5); -- Enterprise customers
         END IF;
         
         SELECT segment INTO v_segment FROM customers WHERE customer_id = v_customer_id;
