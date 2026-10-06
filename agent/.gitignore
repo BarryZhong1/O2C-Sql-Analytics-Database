@@ -6,3 +6,6 @@ __pycache__/
 .coverage
 htmlcov/
 artifacts/
+agent_state.db
+agent_state.db-shm
+agent_state.db-wal
