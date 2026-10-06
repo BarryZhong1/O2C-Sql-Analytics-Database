@@ -721,6 +721,10 @@ END$
 
 DELIMITER ;
 
+-- Seed the session random generator so the synthetic dataset is reproducible
+-- across local runs and CI. Subsequent RAND() calls use this seeded sequence.
+SET @o2c_seed_initializer = RAND(20241005);
+
 -- Execute the data generation procedure
 CALL GenerateO2CData();
 
