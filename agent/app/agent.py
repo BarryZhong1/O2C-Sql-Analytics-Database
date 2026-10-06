@@ -31,7 +31,9 @@ Rules:
 6. When comparing collection performance across customers with different payment
    terms, prefer payment_delay_vs_due_days or late_payment_rate over raw
    invoice_to_payment_days unless the user explicitly asks about cash-cycle length.
-7. Use policy retrieval when business rules or SLA expectations matter.
+7. Use policy/context retrieval when business rules, process changes, or SLA
+   expectations matter. A change log can strengthen a hypothesis but does not by
+   itself prove causality.
 8. Use the deterministic simulator for numerical what-if claims.
 9. Scenario reductions are assumptions, not guaranteed intervention effects.
 10. Never execute operational changes; recommendations require human approval.
@@ -105,10 +107,22 @@ TOOLS = [
         "parameters": {
             "type": "object",
             "properties": {
-                "start_date": {"type": "string", "description": "Current/problem period start YYYY-MM-DD"},
-                "end_date": {"type": "string", "description": "Current/problem period end YYYY-MM-DD"},
-                "compare_start_date": {"type": "string", "description": "Baseline period start YYYY-MM-DD"},
-                "compare_end_date": {"type": "string", "description": "Baseline period end YYYY-MM-DD"},
+                "start_date": {
+                    "type": "string",
+                    "description": "Current/problem period start YYYY-MM-DD",
+                },
+                "end_date": {
+                    "type": "string",
+                    "description": "Current/problem period end YYYY-MM-DD",
+                },
+                "compare_start_date": {
+                    "type": "string",
+                    "description": "Baseline period start YYYY-MM-DD",
+                },
+                "compare_end_date": {
+                    "type": "string",
+                    "description": "Baseline period end YYYY-MM-DD",
+                },
             },
             "required": [
                 "start_date",
@@ -147,9 +161,21 @@ TOOLS = [
             "properties": {
                 "start_date": {"type": "string", "description": "YYYY-MM-DD"},
                 "end_date": {"type": "string", "description": "YYYY-MM-DD"},
-                "order_to_ship_reduction_pct": {"type": "number", "minimum": 0, "maximum": 100},
-                "ship_to_invoice_reduction_pct": {"type": "number", "minimum": 0, "maximum": 100},
-                "invoice_to_payment_reduction_pct": {"type": "number", "minimum": 0, "maximum": 100},
+                "order_to_ship_reduction_pct": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100,
+                },
+                "ship_to_invoice_reduction_pct": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100,
+                },
+                "invoice_to_payment_reduction_pct": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100,
+                },
             },
             "required": [
                 "start_date",
@@ -165,7 +191,11 @@ TOOLS = [
     {
         "type": "function",
         "name": "retrieve_policy",
-        "description": "Retrieve O2C SLA, business-rule, and guardrail context.",
+        "description": (
+            "Retrieve local O2C business context, including SLA rules, guardrails, "
+            "and process change-log entries. Retrieved context can support a hypothesis "
+            "but should not be treated as causal proof."
+        ),
         "parameters": {
             "type": "object",
             "properties": {
@@ -207,12 +237,17 @@ def ask_agent(question: str, max_turns: int = 8) -> dict[str, Any]:
     )
 
     trace: list[dict[str, Any]] = []
+    response_ids = [response.id]
 
-    for _ in range(max_turns):
+    for turn in range(1, max_turns + 1):
         calls = [item for item in response.output if item.type == "function_call"]
         if not calls:
             return {
                 "response_id": response.id,
+                "response_ids": response_ids,
+                "model": settings.openai_model,
+                "tool_turns": turn - 1,
+                "tool_call_count": len(trace),
                 "answer": response.output_text,
                 "tool_trace": trace,
             }
@@ -221,7 +256,15 @@ def ask_agent(question: str, max_turns: int = 8) -> dict[str, Any]:
         for call in calls:
             args = json.loads(call.arguments)
             result = _dispatch(call.name, args)
-            trace.append({"tool": call.name, "arguments": args, "result": result})
+            trace.append(
+                {
+                    "turn": turn,
+                    "call_id": call.call_id,
+                    "tool": call.name,
+                    "arguments": args,
+                    "result": result,
+                }
+            )
             tool_outputs.append(
                 {
                     "type": "function_call_output",
@@ -237,5 +280,6 @@ def ask_agent(question: str, max_turns: int = 8) -> dict[str, Any]:
             previous_response_id=response.id,
             input=tool_outputs,
         )
+        response_ids.append(response.id)
 
     raise RuntimeError("Agent exceeded max tool turns.")
