@@ -219,7 +219,7 @@ CREATE TABLE `audit_log` (
     `record_id` bigint unsigned NOT NULL COMMENT 'Primary key of affected record',
     `old_values` json DEFAULT NULL COMMENT 'Previous values (for UPDATE/DELETE)',
     `new_values` json DEFAULT NULL COMMENT 'New values (for INSERT/UPDATE)',
-    `changed_by` varchar(100) DEFAULT USER() COMMENT 'User who made the change',
+    `changed_by` varchar(100) DEFAULT NULL COMMENT 'User who made the change; application should populate explicitly',
     `changed_at` timestamp DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`audit_id`),
     KEY `ix_audit_table` (`table_name`), -- For table-specific audit queries
