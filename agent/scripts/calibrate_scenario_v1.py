@@ -8,6 +8,7 @@ from app.tools.process_analytics import analyze_process, compare_stage_performan
 from app.workflow import investigate_cycle_time
 
 
+# Keep these windows fixed so repeated CI runs are directly comparable.
 CURRENT = ("2024-07-01", "2024-09-30")
 BASELINE = ("2024-04-01", "2024-06-30")
 
