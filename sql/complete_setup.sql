@@ -797,13 +797,13 @@ SELECT 'KEY BUSINESS METRICS' as summary_section;
 
 SELECT 
     'Total Revenue Generated' as metric,
-    CONCAT(',
+    FORMAT(SUM(oi.qty * oi.unit_price - oi.discount), 0) as metric_value,
     'Gross revenue before tax and freight' as notes
 FROM order_items oi
 UNION ALL
 SELECT 
     'Average Order Value',
-    CONCAT(',
+    FORMAT(AVG(order_values.total), 0),
     'Mean order value across all segments'
 FROM (
     SELECT SUM(oi.qty * oi.unit_price - oi.discount) as total
@@ -813,7 +813,7 @@ FROM (
 UNION ALL
 SELECT 
     'Outstanding A/R Balance',
-    CONCAT(',
+    FORMAT(SUM(i.total - COALESCE(p.paid, 0)), 0),
     '10% of invoices remain unpaid (realistic)'
 FROM invoices i
 LEFT JOIN (
