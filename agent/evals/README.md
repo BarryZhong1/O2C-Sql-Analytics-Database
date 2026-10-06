@@ -68,7 +68,26 @@ Example input shape:
 
 A non-zero exit code means a deterministic trace requirement failed.
 
-## 3. Live behavior suite
+## 3. Runtime observability
+
+Every live agent response now exposes two complementary traces:
+
+- `tool_trace` — tool name, arguments, deterministic result, turn, call ID, and tool latency;
+- `model_response_trace` — response ID, parent response ID, model-call phase, latency, and Responses API usage metadata.
+
+The top-level response also reports:
+
+- total end-to-end `elapsed_ms`;
+- `model_call_count`;
+- aggregated input/output/total tokens;
+- cached input tokens when reported;
+- reasoning tokens when reported.
+
+The local observability layer deliberately does **not** duplicate prompt/answer contents inside the model-call trace. The live-eval report already stores the final answer separately for evaluation.
+
+Runtime metrics are useful for understanding latency and evaluation cost characteristics, but they are not treated as answer-quality scores.
+
+## 4. Live behavior suite
 
 With Scenario V1 loaded and `OPENAI_API_KEY` configured, run all behavior cases against the live Responses API:
 
@@ -79,7 +98,7 @@ python scripts/run_live_evals.py
 
 The report is written to `artifacts/live_eval_report.json` and retains:
 - final answer;
-- model metadata;
+- model metadata and runtime observability;
 - complete tool trace;
 - deterministic trace-evaluation result;
 - per-case errors without discarding the rest of the suite.
@@ -89,11 +108,12 @@ The repository also includes a manual GitHub Actions workflow, **Agent live beha
 2. applies and recalibrates Scenario V1;
 3. runs all live behavior cases;
 4. optionally runs the semantic judge;
-5. uploads the resulting JSON reports as workflow artifacts.
+5. generates a Markdown evaluation summary with quality, latency, token, and tool-sequence information;
+6. uploads the resulting reports as workflow artifacts.
 
 The workflow is intentionally `workflow_dispatch` only so API-backed evaluation does not incur cost on every push. It requires the repository secret `OPENAI_API_KEY`.
 
-## 4. Semantic / rubric evaluation
+## 5. Semantic / rubric evaluation
 
 Some requirements cannot be judged reliably from tool traces alone, including:
 - whether the answer separates observation, hypothesis, and assumption;
@@ -110,7 +130,7 @@ An optional LLM-as-Judge layer is implemented in `llm_judge.py`. It receives onl
 - the candidate answer;
 - the captured tool trace.
 
-It does **not** receive hidden Scenario V1 ground truth. The judge is instructed to treat candidate content as untrusted data and to avoid outside facts.
+It does **not** receive hidden Scenario V1 ground truth. The judge is instructed to treat candidate content as untrusted data and to avoid outside facts. The judge response uses a strict Responses API JSON-schema output contract requiring a 0-2 score and rationale for every documented rubric dimension; the returned object is then validated and aggregated again in deterministic Python.
 
 After a live report exists:
 
@@ -136,7 +156,8 @@ Semantic scoring is advisory for answer quality. Deterministic trace/numerical c
 
 Each live eval run should retain:
 - final answer;
-- tool trace;
+- tool trace and tool latencies;
+- model response IDs, latencies, and usage metadata;
 - deterministic trace report;
 - rubric/LLM-judge report where enabled;
 - model/version metadata.
