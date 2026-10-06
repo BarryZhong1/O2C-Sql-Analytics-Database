@@ -63,6 +63,8 @@ AI investigator (OpenAI Responses API)
                       Human approval
 ```
 
+See `docs/architecture.md` for component boundaries, sequence diagrams, deterministic/model/human responsibility zones, and the evaluation architecture.
+
 ### Tools
 
 1. **Process analytics** — whitelisted SQL metrics/dimensions with deterministic period comparisons and rankings.
@@ -99,12 +101,15 @@ agent/
 │   ├── scenario_v1_marketplace_bottleneck.sql
 │   └── reset_scenario_v1.sql
 ├── docs/
+│   ├── architecture.md
 │   ├── project_plan.md
 │   ├── business_scenario_v1.md
 │   ├── data_readiness_review.md
 │   ├── scenario_v1_benchmark.md
 │   ├── memory_design.md
-│   └── deployment.md
+│   ├── deployment.md
+│   ├── demo_script.md
+│   └── final_report_template.md
 ├── evals/
 │   ├── README.md
 │   ├── eval_cases.json
@@ -121,7 +126,8 @@ agent/
 │   ├── calibrate_scenario_v1.py
 │   ├── evaluate_agent_run.py
 │   ├── run_live_evals.py
-│   └── run_semantic_judge.py
+│   ├── run_semantic_judge.py
+│   └── build_eval_summary.py
 ├── sql/
 │   └── validate_scenario_v1.sql
 ├── Dockerfile
@@ -217,11 +223,17 @@ Run all live behavior cases after configuring the database and API key:
 cd agent
 python scripts/run_live_evals.py
 python scripts/run_semantic_judge.py
+python scripts/build_eval_summary.py
 ```
 
-A manual GitHub Actions workflow, **Agent live behavior evals**, rebuilds Scenario V1, recalibrates it, runs all seven live cases, optionally applies the semantic judge, and uploads the JSON reports. It is manual-only to avoid API cost on every push.
+A manual GitHub Actions workflow, **Agent live behavior evals**, rebuilds Scenario V1, recalibrates it, runs all seven live cases, optionally applies the semantic judge, generates a Markdown evaluation summary, and uploads the artifacts. It is manual-only to avoid API cost on every push.
 
 See `evals/README.md`.
+
+## Demo and final report
+
+- `docs/demo_script.md` provides a five-minute portfolio walkthrough plus a backup path if the external model API is unavailable during a presentation.
+- `docs/final_report_template.md` is intentionally result-gated: measured live pass rates are added only after the full seven-case evaluation has actually run.
 
 ## CI / deployment validation
 
@@ -239,7 +251,7 @@ The automatic Docker smoke test does **not** call the model API.
 - **P1 — Workflow baseline:** implemented and benchmarked.
 - **P2 — Agent tools:** implemented with dynamic tool selection and observable traces.
 - **P3 — Context/memory:** short-term session state and bounded analyst preferences implemented.
-- **P4 — Quality:** deterministic calibration/trace checks, semantic rubric, optional LLM judge, and live-eval runner implemented; full API-backed results still need to be recorded.
-- **P5 — Deployment/demo:** Dockerized API and lightweight analyst UI implemented; final demo/evaluation report remains.
+- **P4 — Quality:** deterministic calibration/trace checks, semantic rubric, optional LLM judge, live-eval runner, and summary generator implemented; full API-backed results still need to be recorded.
+- **P5 — Deployment/demo:** Dockerized API, analyst UI, architecture documentation, demo script, and result-gated final report template implemented.
 
 The next evidence-generating milestone is the full live seven-case evaluation against Scenario V1, followed by prompt/tool tuning only where the recorded failures justify it.
