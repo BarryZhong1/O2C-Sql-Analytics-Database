@@ -24,7 +24,7 @@ def _benchmark():
     }
 
 
-def test_build_summary_combines_trace_and_semantic_results():
+def test_build_summary_combines_trace_semantic_and_runtime_results():
     live = {
         "cases_requested": 1,
         "cases_completed": 1,
@@ -34,6 +34,17 @@ def test_build_summary_combines_trace_and_semantic_results():
             {
                 "case_id": "eval_001",
                 "status": "completed",
+                "agent_run": {
+                    "elapsed_ms": 1234.5,
+                    "model_call_count": 2,
+                    "usage": {
+                        "input_tokens": 500,
+                        "output_tokens": 120,
+                        "total_tokens": 620,
+                        "cached_input_tokens": 100,
+                        "reasoning_tokens": 30,
+                    },
+                },
                 "deterministic_trace_eval": {
                     "trace_checks_passed": True,
                     "tool_sequence": ["compare_stage_performance"],
@@ -70,4 +81,7 @@ def test_build_summary_combines_trace_and_semantic_results():
     assert "PASS" in output
     assert "13/14" in output
     assert "compare_stage_performance" in output
+    assert "1234.50 ms" in output
+    assert "Total tokens: **620**" in output
+    assert "620 | compare_stage_performance" in output
     assert "No deterministic trace failures" in output
