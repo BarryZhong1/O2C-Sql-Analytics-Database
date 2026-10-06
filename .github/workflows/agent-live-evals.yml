@@ -96,6 +96,17 @@ jobs:
           PYTHONPATH: .
         run: python scripts/run_semantic_judge.py --input artifacts/live_eval_report.json --output artifacts/semantic_eval_report.json
 
+      - name: Build portfolio evaluation summary
+        id: summary
+        if: ${{ hashFiles('agent/artifacts/live_eval_report.json') != '' }}
+        continue-on-error: true
+        working-directory: agent
+        run: |
+          python scripts/build_eval_summary.py \
+            --live artifacts/live_eval_report.json \
+            --semantic artifacts/semantic_eval_report.json \
+            --output artifacts/evaluation_summary.md
+
       - name: Upload live evaluation artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -104,6 +115,7 @@ jobs:
           path: |
             agent/artifacts/live_eval_report.json
             agent/artifacts/semantic_eval_report.json
+            agent/artifacts/evaluation_summary.md
             scenario-v1-live-calibration.json
           if-no-files-found: warn
 
@@ -118,6 +130,10 @@ jobs:
           fi
           if [ "${{ inputs.semantic_judge }}" = "true" ] && [ "${{ steps.semantic.outcome }}" != "success" ]; then
             echo "Semantic rubric evaluation failed or did not complete."
+            failed=1
+          fi
+          if [ "${{ steps.summary.outcome }}" != "success" ]; then
+            echo "Evaluation summary generation failed."
             failed=1
           fi
           exit "$failed"
