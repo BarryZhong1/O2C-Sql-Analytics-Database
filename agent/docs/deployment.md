@@ -10,7 +10,7 @@ The local deployment contains three services:
 Browser / API client
         |
         v
-Agent API :8000
+Agent API + analyst UI :8000
         |
         +----> MySQL O2C database :3306
         |
@@ -18,7 +18,7 @@ Agent API :8000
         |
         +----> local business-context documents
         |
-        +----> persistent SQLite session-state volume
+        +----> persistent SQLite session/preference volume
 
 Adminer :8080 ----> MySQL
 ```
@@ -28,7 +28,7 @@ Adminer :8080 ----> MySQL
 - Docker with Compose v2
 - an OpenAI API key for `/agent/*` model calls
 
-The `/health`, fixed workflow, database, and container smoke-test paths do not require the model API key unless they invoke the model.
+The analyst UI, `/health`, fixed workflow, database, and container smoke-test paths can load without the model API key. Running an agent investigation requires it.
 
 ## Start the stack
 
@@ -43,6 +43,12 @@ Check service state:
 
 ```bash
 docker compose ps
+```
+
+Analyst UI:
+
+```text
+http://localhost:8000/
 ```
 
 Agent health:
@@ -81,7 +87,20 @@ docker compose exec -T db sh -c \
   < agent/data/scenario_v1_marketplace_bottleneck.sql
 ```
 
-## Run an investigation
+## Use the analyst UI
+
+The root page is intentionally lightweight and has no separate frontend build system. It supports:
+
+- natural-language business questions;
+- stateless or stateful investigation sessions;
+- optional analyst profile preferences;
+- final answer display;
+- expandable tool trace and response metadata;
+- explicit preference controls for detail level, preferred drill-down, risks, and scenario inclusion.
+
+The browser calls the same FastAPI endpoints documented below, so the UI is a thin client rather than a second business-logic layer.
+
+## Run an investigation through the API
 
 Fixed workflow baseline:
 
@@ -121,9 +140,9 @@ curl -X POST http://localhost:8000/agent/session/demo/ask \
 Docker volumes:
 
 - `dbdata` persists the MySQL database.
-- `agentstate` persists the local SQLite session-response mapping.
+- `agentstate` persists the local SQLite session-response mapping and bounded analyst preferences.
 
-The session-state store contains response IDs and timestamps, not a second copy of raw O2C transactional data.
+The local state store contains response IDs, timestamps, and whitelisted profile preferences; it is not a second copy of raw O2C transactional data.
 
 Remove containers but retain data:
 
@@ -155,7 +174,7 @@ Do not commit API keys or production credentials.
 - the API accesses MySQL through the application account rather than the root account;
 - analytical tools expose whitelisted metrics/dimensions rather than arbitrary SQL;
 - the agent has no business-operation write tools;
-- local session state is isolated in a dedicated volume;
+- local session/preferences state is isolated in a dedicated volume;
 - scenario and policy files are baked into the image for reproducible demos.
 
 This is a portfolio/demo deployment, not a production security certification. Production hardening would additionally require secret management, authentication/authorization, TLS, network policies, centralized audit logging, database least-privilege review, retention controls, and environment-specific configuration.
@@ -169,7 +188,8 @@ This is a portfolio/demo deployment, not a production security certification. Pr
 3. MySQL becomes healthy;
 4. the agent starts;
 5. `/health` returns `status=ok`;
-6. a session-status request reaches the FastAPI service;
-7. the stack is torn down after the test.
+6. the analyst UI is served at `/`;
+7. a session-status request reaches the FastAPI service;
+8. the stack is torn down after the test.
 
 The smoke test deliberately does not call the external model API, so it does not require an API secret in CI.
