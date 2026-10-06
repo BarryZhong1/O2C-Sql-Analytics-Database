@@ -1,6 +1,8 @@
+from pathlib import Path
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 from app.agent import ask_agent
@@ -15,9 +17,11 @@ from app.state import (
 from app.workflow import investigate_cycle_time
 
 
+UI_PATH = Path(__file__).with_name("static") / "index.html"
+
 app = FastAPI(
     title="O2C Process Improvement & Scenario Planning Agent",
-    version="0.3.0",
+    version="0.4.0",
 )
 
 
@@ -60,6 +64,13 @@ def _request_preferences(profile_id: str | None) -> dict:
         return {}
     normalized = _validate_id(profile_id, "profile_id")
     return get_preferences(normalized)
+
+
+@app.get("/", response_class=HTMLResponse)
+def analyst_ui() -> HTMLResponse:
+    if not UI_PATH.exists():
+        raise HTTPException(status_code=404, detail="analyst UI not found")
+    return HTMLResponse(UI_PATH.read_text(encoding="utf-8"))
 
 
 @app.get("/health")
