@@ -20,7 +20,7 @@ METRICS = {
     "late_payment_rate": (
         "AVG(CASE "
         "WHEN first_payment_ts IS NULL THEN NULL "
-        "WHEN first_payment_ts > due_date THEN 1 ELSE 0 END) * 100"
+        "WHEN DATE(first_payment_ts) > due_date THEN 1 ELSE 0 END) * 100"
     ),
     "on_time_delivery_rate": (
         "AVG(CASE WHEN delivery_performance = 'ON_TIME' THEN 1 ELSE 0 END) * 100"
@@ -200,7 +200,11 @@ def compare_stage_performance(
         stage_changes,
         key=lambda item: (
             item["absolute_change_days"] is not None,
-            item["absolute_change_days"] or float("-inf"),
+            (
+                item["absolute_change_days"]
+                if item["absolute_change_days"] is not None
+                else float("-inf")
+            ),
         ),
         reverse=True,
     )
