@@ -533,6 +533,8 @@ BEGIN
     DECLARE v_order_id INT;
     DECLARE v_product_id INT;
     DECLARE v_segment VARCHAR(20);
+    DECLARE v_order_date DATETIME;
+    DECLARE v_date_bucket INT;
     DECLARE i INT DEFAULT 1;
     DECLARE j INT;
     
@@ -542,43 +544,39 @@ BEGIN
         -- Select customer based on realistic segment distribution
         -- 50% SMB (1-22), 35% Mid (23-27), 15% Enterprise (28-32)
         IF i <= v_order_count * 0.50 THEN
-            SET v_customer_id = 1 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 22); -- SMB customers
+            SET v_customer_id = 1 + MOD(i * 17, 22); -- SMB customers
         ELSEIF i <= v_order_count * 0.85 THEN
-            SET v_customer_id = 23 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 5); -- Mid customers
+            SET v_customer_id = 23 + MOD(i * 3, 5); -- Mid customers
         ELSE
-            SET v_customer_id = 28 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 5); -- Enterprise customers
+            SET v_customer_id = 28 + MOD(i * 2, 5); -- Enterprise customers
         END IF;
         
         SELECT segment INTO v_segment FROM customers WHERE customer_id = v_customer_id;
         
-        -- Generate realistic order dates with seasonal patterns
+        -- Deterministic seasonal distribution keeps each run comparable:
+        -- 15% Q1, 25% Q2, 35% Q3, 25% Q4.
+        SET v_date_bucket = MOD((i - 1) * 37, 100);
+        SET v_order_date = CASE
+            WHEN v_date_bucket < 15 THEN DATE_ADD('2024-01-01', INTERVAL MOD(i * 53, 90) DAY)
+            WHEN v_date_bucket < 40 THEN DATE_ADD('2024-04-01', INTERVAL MOD(i * 47, 91) DAY)
+            WHEN v_date_bucket < 75 THEN DATE_ADD('2024-07-01', INTERVAL MOD(i * 43, 92) DAY)
+            ELSE DATE_ADD('2024-10-01', INTERVAL MOD(i * 41, 92) DAY)
+        END + INTERVAL MOD(i * 7, 24) HOUR;
+
         INSERT INTO orders (customer_id, order_ts, status, channel, requested_ship_date) VALUES
-        (v_customer_id, 
-         -- Date distribution: 15% Q1, 25% Q2, 35% Q3, 25% Q4 (holiday boost)
-         CASE 
-            WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.15 THEN DATE_ADD('2024-01-01', INTERVAL FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 90) DAY)
-            WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.40 THEN DATE_ADD('2024-04-01', INTERVAL FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 91) DAY)
-            WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.75 THEN DATE_ADD('2024-07-01', INTERVAL FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 92) DAY)
-            ELSE DATE_ADD('2024-10-01', INTERVAL FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 92) DAY)
-         END + INTERVAL FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 24) HOUR,
-         'DELIVERED', -- 95% delivered for analytics
-         -- Channel distribution by segment
-         CASE v_segment
-            WHEN 'SMB' THEN CASE WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.6 THEN 'Web' ELSE 'Marketplace' END
-            WHEN 'Mid' THEN CASE WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.7 THEN 'InsideSales' ELSE 'Web' END
-            ELSE 'InsideSales' -- Enterprise always uses inside sales
-         END,
-         DATE_ADD(CURDATE(), INTERVAL 2 DAY) -- Standard 2-day lead time
+        (
+            v_customer_id,
+            v_order_date,
+            'DELIVERED',
+            CASE v_segment
+                WHEN 'SMB' THEN CASE WHEN MOD(i * 13, 10) < 6 THEN 'Web' ELSE 'Marketplace' END
+                WHEN 'Mid' THEN CASE WHEN MOD(i * 11, 10) < 7 THEN 'InsideSales' ELSE 'Web' END
+                ELSE 'InsideSales'
+            END,
+            DATE_ADD(DATE(v_order_date), INTERVAL 2 DAY)
         );
         
         SET v_order_id = LAST_INSERT_ID();
-
-        -- Keep the requested ship date tied to the synthetic order date rather
-        -- than the wall-clock date when the setup script happens to run.
-        -- This makes shipment SLA metrics reproducible across years.
-        UPDATE orders
-        SET requested_ship_date = DATE_ADD(DATE(order_ts), INTERVAL 2 DAY)
-        WHERE order_id = v_order_id;
         
         -- Add 1-6 items per order based on segment
         SET j = 1;
@@ -624,12 +622,12 @@ BEGIN
         INSERT INTO shipments (order_id, ship_ts, promised_delivery_ts, actual_delivery_ts, status, ship_from_loc, carrier, tracking_number)
         SELECT 
             v_order_id,
-            DATE_ADD(order_ts, INTERVAL 1 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 2) DAY),
-            DATE_ADD(order_ts, INTERVAL 4 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 2) DAY),
-            DATE_ADD(order_ts, INTERVAL 3 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 4) DAY), -- 85% on-time
+            DATE_ADD(order_ts, INTERVAL 1 + MOD(i * 7, 2) DAY),
+            DATE_ADD(order_ts, INTERVAL 4 + MOD(i * 11, 2) DAY),
+            DATE_ADD(order_ts, INTERVAL 3 + MOD(i * 5, 4) DAY),
             'DELIVERED',
-            CASE WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.6 THEN 'PHX-01' ELSE 'DAL-01' END,
-            CASE WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.5 THEN 'UPS' ELSE 'FedEx' END,
+            CASE WHEN MOD(i * 17, 10) < 6 THEN 'PHX-01' ELSE 'DAL-01' END,
+            CASE WHEN MOD(i * 19, 2) = 0 THEN 'UPS' ELSE 'FedEx' END,
             CONCAT('TRK', LPAD(v_order_id, 8, '0'))
         FROM orders WHERE order_id = v_order_id;
         
@@ -655,30 +653,38 @@ BEGIN
         WHERE o.order_id = v_order_id
         GROUP BY o.order_id, s.ship_ts, c.payment_terms;
         
-        -- Generate payments (90% payment rate)
-        IF RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.90 THEN
+        -- Deterministic 90% payment rate with timing relative to contractual due date.
+        -- This keeps payment-term mix from creating artificial quarter-to-quarter noise.
+        IF MOD(i * 17, 10) <> 0 THEN
             INSERT INTO payments (invoice_id, payment_ts, method, amount, reference_number)
             SELECT 
-                i.invoice_id,
+                inv.invoice_id,
                 CASE c.payment_terms
                     WHEN 'Prepaid' THEN o.order_ts
-                    ELSE DATE_ADD(i.due_date, INTERVAL -5 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 15) DAY) -- ±5-10 days from due
+                    ELSE DATE_ADD(inv.due_date, INTERVAL -5 + MOD(i * 19, 15) DAY)
                 END,
                 CASE c.segment
-                    WHEN 'Enterprise' THEN CASE WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.6 THEN 'ACH' ELSE 'Wire' END
-                    WHEN 'Mid' THEN CASE WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.4 THEN 'ACH' WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.7 THEN 'Card' ELSE 'Check' END
-                    ELSE CASE WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.5 THEN 'Card' ELSE 'ACH' END
+                    WHEN 'Enterprise' THEN CASE WHEN MOD(i * 23, 10) < 6 THEN 'ACH' ELSE 'Wire' END
+                    WHEN 'Mid' THEN CASE
+                        WHEN MOD(i * 29, 10) < 4 THEN 'ACH'
+                        WHEN MOD(i * 29, 10) < 7 THEN 'Card'
+                        ELSE 'Check'
+                    END
+                    ELSE CASE WHEN MOD(i * 31, 10) < 5 THEN 'Card' ELSE 'ACH' END
                 END,
-                CASE WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.95 THEN i.total ELSE i.total * (0.3 + RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 0.6) END, -- 95% full payment
-                CONCAT('PAY', DATE_FORMAT(NOW(), '%Y%m%d'), LPAD(i.invoice_id, 6, '0'))
-            FROM invoices i
-            JOIN orders o ON i.order_id = o.order_id  
+                CASE
+                    WHEN MOD(i * 37, 20) <> 0 THEN inv.total
+                    ELSE inv.total * 0.60
+                END,
+                CONCAT('PAY', DATE_FORMAT(o.order_ts, '%Y%m%d'), LPAD(inv.invoice_id, 6, '0'))
+            FROM invoices inv
+            JOIN orders o ON inv.order_id = o.order_id
             JOIN customers c ON o.customer_id = c.customer_id
-            WHERE i.order_id = v_order_id;
+            WHERE inv.order_id = v_order_id;
         END IF;
         
         -- Generate returns (3% return rate)
-        IF RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.03 THEN
+        IF MOD(i * 41, 100) < 3 THEN
             INSERT INTO returns (order_id, product_id, qty, reason_code, rma_ts, disposition, refund_amount, processed_by)
             SELECT 
                 oi.order_id,
