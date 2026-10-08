@@ -92,6 +92,7 @@
   <span class="tag">Read-only analytics</span>
   <span class="tag">Scenario planning</span>
   <span class="tag">Human approval</span>
+  <span class="tag">Mock/OpenAI backend</span>
   <h1>O2C Process Improvement Agent</h1>
   <p>Investigate process deterioration, drill into business drivers, retrieve operating context, and test transparent what-if scenarios.</p>
 
@@ -222,7 +223,7 @@
       delete metadata.answer;
       delete metadata.tool_trace;
       $("meta").textContent = JSON.stringify(metadata, null, 2);
-      setStatus(`Completed with ${payload.tool_call_count ?? 0} tool call(s).`, "good");
+      setStatus(`Completed in ${payload.backend ?? "configured"} mode with ${payload.tool_call_count ?? 0} tool call(s).`, "good");
     } catch (error) {
       setStatus(`Investigation failed: ${error.message}`, "bad");
     } finally {
