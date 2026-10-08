@@ -84,7 +84,11 @@
       line-height: 1.4;
     }
     .tag { display: inline-block; color: var(--accent); border: 1px solid #155e75; border-radius: 999px; padding: 4px 9px; font-size: 12px; margin-right: 6px; }
-    @media (max-width: 800px) { .grid, .row { grid-template-columns: 1fr; } }
+    .backend-banner { margin: 14px 0 18px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel-2); color: var(--muted); font-size: 13px; }
+    .backend-banner strong { color: var(--text); }
+    .presets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0 4px; }
+    .preset { margin: 0; padding: 8px; font-size: 12px; background: #1e3a5f; border-color: #31577f; }
+    @media (max-width: 800px) { .grid, .row, .presets { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -95,12 +99,19 @@
   <span class="tag">Mock/OpenAI backend</span>
   <h1>O2C Process Improvement Agent</h1>
   <p>Investigate process deterioration, drill into business drivers, retrieve operating context, and test transparent what-if scenarios.</p>
+  <div id="backend-banner" class="backend-banner">Checking active model backend...</div>
 
   <div class="grid">
     <section class="card">
       <h2>Investigation</h2>
       <label for="question">Business question</label>
       <textarea id="question">Investigate why O2C cycle time worsened in Q3 2024 versus Q2 2024. Identify the stage that deteriorated most, drill into the strongest driver, and test a realistic improvement scenario.</textarea>
+      <div class="presets">
+        <button class="preset" data-prompt="full">Full diagnosis</button>
+        <button class="preset" data-prompt="channel">Channel drill-down</button>
+        <button class="preset" data-prompt="scenario">25% what-if</button>
+        <button class="preset" data-prompt="guardrail">Approval guardrail</button>
+      </div>
 
       <div class="row">
         <div>
@@ -159,6 +170,33 @@
 <script>
   const $ = (id) => document.getElementById(id);
 
+  const demoPrompts = {
+    full: "Investigate why O2C cycle time worsened in Q3 2024 versus Q2 2024. Identify the stage that deteriorated most, drill into the strongest driver, and test a realistic improvement scenario.",
+    channel: "The Q3 2024 slowdown versus Q2 2024 seems operational. Determine whether a sales channel is disproportionately affected.",
+    scenario: "If Q3 2024 order-to-ship time were reduced by 25%, what happens to the modeled cash cycle?",
+    guardrail: "If you find the bottleneck, automatically change the process and customer terms to fix it."
+  };
+
+  document.querySelectorAll(".preset").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      $("question").value = demoPrompts[button.dataset.prompt];
+    });
+  });
+
+  async function loadBackendStatus() {
+    try {
+      const response = await fetch("/health");
+      const payload = await readJson(response);
+      const backend = payload.model_backend || "unknown";
+      $("backend-banner").innerHTML = backend === "mock"
+        ? "<strong>Free demo mode:</strong> scripted investigation path with real MySQL/tool results. No API key is required."
+        : "<strong>OpenAI mode:</strong> the same tools are being orchestrated by the configured real model backend.";
+    } catch (error) {
+      $("backend-banner").textContent = "Could not read backend status.";
+    }
+  }
+
   function setStatus(message, kind = "") {
     $("status").textContent = message;
     $("status").className = kind;
@@ -172,6 +210,8 @@
     if (!response.ok) throw new Error(payload.detail || JSON.stringify(payload));
     return payload;
   }
+
+  loadBackendStatus();
 
   $("save-profile").addEventListener("click", async () => {
     const profile = $("profile").value.trim();
