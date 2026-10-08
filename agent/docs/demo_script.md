@@ -6,12 +6,13 @@ Show that the project is not a generic chatbot. It is a bounded business-analysi
 
 ## Before recording
 
-1. Start the Docker stack.
-2. Load `sql/complete_setup.sql`.
-3. Apply `agent/data/scenario_v1_marketplace_bottleneck.sql`.
-4. Confirm `http://localhost:8000/health` returns `status=ok`.
-5. Open `http://localhost:8000/`.
-6. Use a configured `OPENAI_API_KEY`.
+1. Run `bash agent/scripts/start_demo.sh` from the repository root.
+2. Confirm the script reports that the API is healthy.
+3. Open `http://localhost:8000/`.
+4. Confirm the banner says **Free demo mode** / `mock` backend.
+5. Click the **Full diagnosis** preset.
+
+No OpenAI API key is required for this default presentation path.
 
 Recommended demo prompt:
 
@@ -34,7 +35,8 @@ Briefly explain the flow:
 ```text
 Business question
       ↓
-Responses API agent
+Model/orchestration boundary
+(mock for free demo; Responses API optional)
       ↓
 Approved tools
   ├─ process analytics / MySQL
@@ -53,9 +55,11 @@ Call out two design choices:
 
 ## 1:20-2:50 — Run the investigation
 
-Submit the recommended prompt.
+Click **Full diagnosis** and then **Run investigation**.
 
-While the model runs, explain the hidden evaluation design without revealing hidden answers to the agent:
+For the free demo, say explicitly that the investigation path at the model boundary is scripted, while the SQL queries, database values, retrieval results, scenario calculations, traces, API, and UI are real project components.
+
+While the investigation runs, explain the hidden evaluation design without revealing hidden answers to the agent:
 
 - Scenario V1 is a controlled synthetic overlay.
 - The benchmark deliberately keeps invoice-to-payment as the longest absolute stage while another stage deteriorates more.
@@ -81,7 +85,7 @@ Point out:
 - quantitative results come from tools rather than free-form model arithmetic;
 - the trace can be evaluated automatically.
 
-If the agent used additional reasonable tools, explain that the system is agentic because the exact investigation path is not fully hard-coded.
+In mock mode, do **not** claim the path itself is emergent or agentic: it is scripted for zero-cost demonstration. Instead, explain that the same bounded tool loop can be switched to the OpenAI backend for unscripted tool selection without changing the business tools.
 
 ## 3:35-4:10 — State and memory
 
@@ -91,7 +95,8 @@ Show a follow-up question in the same session, for example:
 
 Explain:
 
-- short-term continuity uses the Responses API `previous_response_id`;
+- the state layer preserves response lineage/session continuity across the model-backend abstraction;
+- in the real OpenAI backend, short-term continuity uses the Responses API `previous_response_id`;
 - local state stores response IDs/timestamps rather than duplicating the raw O2C transcript;
 - long-term memory is deliberately bounded to explicit analyst preferences such as detail level and preferred breakdown;
 - preferences cannot override evidence or approval boundaries.
@@ -115,16 +120,17 @@ Suggested closing:
 
 > The project moves an O2C database from descriptive reporting to a deployable AI-assisted investigation workflow. The model decides which approved analytical step to take next, but the system keeps calculations auditable, memory bounded, behavior evaluated, and business execution under human approval.
 
-## Backup demo path
+## Demo reliability / backup path
 
-If the external model API is unavailable during a presentation:
+The recommended presentation already uses the local mock backend, so it does not depend on external model availability. If the local UI fails, use this fallback:
 
-1. show the fixed workflow endpoint;
-2. show the validated Scenario V1 benchmark;
-3. show a previously saved live-eval artifact;
-4. walk through the tool trace and evaluation summary.
+1. show the validated Scenario V1 benchmark;
+2. show the latest `Agent mocked behavior evals` GitHub Actions run;
+3. show its 7/7 deterministic trace pass result;
+4. walk through the stored trace/evaluation summary;
+5. show the fixed workflow endpoint as an additional deterministic baseline.
 
-This still demonstrates the architecture and controlled evaluation without pretending a failed external API call is a business-system failure.
+This keeps the demonstration honest: mocked integration evidence is not presented as real-model reasoning evidence.
 
 ## Interview follow-up talking points
 
@@ -138,3 +144,6 @@ Be ready to explain:
 - why long-term memory is whitelisted rather than unrestricted;
 - why multi-agent orchestration was not added without a real coordination need;
 - how live eval failures would drive prompt/tool revisions.
+
+
+See `docs/demo_quickstart.md` for the exact zero-cost startup commands and presenter wording.
