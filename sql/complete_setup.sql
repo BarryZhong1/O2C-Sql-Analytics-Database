@@ -11,6 +11,9 @@ SET time_zone = '+00:00';
 SET foreign_key_checks = 0; -- Disable during setup for performance
 SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
 
+-- Deterministic pseudo-random seed used by synthetic data generation.
+SET @o2c_rng_seed = 20241005;
+
 -- =============================================
 -- 1. DATABASE CREATION
 -- =============================================
@@ -219,7 +222,7 @@ CREATE TABLE `audit_log` (
     `record_id` bigint unsigned NOT NULL COMMENT 'Primary key of affected record',
     `old_values` json DEFAULT NULL COMMENT 'Previous values (for UPDATE/DELETE)',
     `new_values` json DEFAULT NULL COMMENT 'New values (for INSERT/UPDATE)',
-    `changed_by` varchar(100) DEFAULT USER() COMMENT 'User who made the change',
+    `changed_by` varchar(100) DEFAULT NULL COMMENT 'User who made the change; application should populate explicitly',
     `changed_at` timestamp DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`audit_id`),
     KEY `ix_audit_table` (`table_name`), -- For table-specific audit queries
@@ -229,15 +232,13 @@ CREATE TABLE `audit_log` (
 
 -- =============================================
 -- 3. GENERATE LARGE REALISTIC DATASET
--- Creates 75 customers, 30 products, and 800+ orders with complete O2C flow
+-- Creates 25 customers, 18 products, and 800 orders with complete O2C flow
 -- =============================================
 
--- Insert 75 diversified customers across all segments and regions
--- SMB: 45 customers (60%) - typical small business distribution
--- Mid: 20 customers (27%) - regional distributors
--- Enterprise: 10 customers (13%) - major accounts
+-- Insert 25 diversified customers across all segments and regions
+-- SMB: 15 customers, Mid: 5 customers, Enterprise: 5 customers
 INSERT INTO customers (name, segment, region, payment_terms, credit_limit, created_at) VALUES
--- SMB Customers (45 total) - smaller credit limits, mix of payment terms
+-- SMB Customers (15 total) - smaller credit limits, mix of payment terms
 ('Sunrise Retail LLC', 'SMB', 'West', 'Net30', 45000, '2024-01-15 09:00:00'),
 ('Valley Sports Center', 'SMB', 'West', 'Net15', 35000, '2024-01-22 10:30:00'),
 ('Desert Electronics Co', 'SMB', 'West', 'Net30', 28000, '2024-02-01 14:15:00'),
@@ -248,29 +249,26 @@ INSERT INTO customers (name, segment, region, payment_terms, credit_limit, creat
 ('Arizona Outdoor Gear', 'SMB', 'West', 'Net30', 47000, '2024-03-15 14:30:00'),
 ('Tempe Tech Solutions', 'SMB', 'West', 'Net15', 29000, '2024-03-20 09:15:00'),
 ('Glendale General Store', 'SMB', 'West', 'Net30', 38000, '2024-04-01 11:45:00'),
--- Continue with remaining 35 SMB customers across all regions...
 ('Dallas Direct Sales', 'SMB', 'South', 'Net30', 46000, '2024-04-05 10:15:00'),
 ('Houston Hardware Hub', 'SMB', 'South', 'Net15', 33000, '2024-04-10 13:30:00'),
 ('Austin Electronics Express', 'SMB', 'South', 'Net30', 49000, '2024-04-15 15:20:00'),
 ('San Antonio Supplies', 'SMB', 'South', 'Net30', 41000, '2024-04-20 08:45:00'),
 ('Fort Worth Fashion', 'SMB', 'South', 'Prepaid', 22000, '2024-05-01 12:30:00'),
--- Mid-Market Customers (20 total) - larger credit limits, more Net45 terms
+-- Mid-Market Customers (5 total) - larger credit limits, more Net45 terms
 ('Regional Retail Chain West', 'Mid', 'West', 'Net30', 180000, '2024-01-10 09:30:00'),
 ('Western Wholesale Distribution', 'Mid', 'West', 'Net45', 220000, '2024-01-25 11:15:00'), -- Net45 for established bulk buyers
 ('California Commerce Corp', 'Mid', 'West', 'Net30', 195000, '2024-02-05 14:20:00'),
 ('Nevada Networks Inc', 'Mid', 'West', 'Net30', 160000, '2024-02-20 10:45:00'),
 ('Arizona Alliance Group', 'Mid', 'West', 'Net45', 240000, '2024-03-05 13:30:00'),
--- Enterprise Customers (10 total) - highest credit limits, negotiated terms
+-- Enterprise Customers (5 total) - highest credit limits, negotiated terms
 ('Global Retail Corporation', 'Enterprise', 'West', 'Net30', 850000, '2024-01-05 08:00:00'), -- Major retail chain
 ('National Distribution Network', 'Enterprise', 'North', 'Net45', 1200000, '2024-01-15 10:30:00'), -- Largest customer
 ('Mega Mall Systems Inc', 'Enterprise', 'South', 'Net30', 950000, '2024-02-01 12:15:00'),
 ('Continental Commerce Corp', 'Enterprise', 'East', 'Net45', 1100000, '2024-02-15 14:45:00'),
 ('American Retail Alliance', 'Enterprise', 'West', 'Net30', 900000, '2024-03-01 09:30:00');
 
--- Insert 30 products across 3 categories with realistic pricing
--- Electronics: High margin, lower volume (12 products)
--- Apparel: Volume sales, moderate margin (12 products)  
--- Home: Steady demand, seasonal variations (6 products)
+-- Insert 18 products across 3 categories with realistic pricing
+-- Electronics: 6 products; Apparel: 6 products; Home: 6 products
 INSERT INTO products (sku, category, unit_cost, list_price, safety_stock) VALUES
 -- Electronics Category - 40-60% gross margins typical
 ('ELE-SMARTPHONE-PRO', 'Electronics', 285.00, 599.99, 75), -- Premium smartphone
@@ -303,10 +301,10 @@ SELECT
     'PHX-01' as loc_code,
     -- Stock levels based on product category and expected velocity
     CASE 
-        WHEN category = 'Electronics' AND unit_cost > 400 THEN 200 + FLOOR(RAND() * 100) -- Low stock for expensive items
-        WHEN category = 'Electronics' THEN 800 + FLOOR(RAND() * 400) -- Moderate stock for electronics
-        WHEN category = 'Apparel' THEN 1200 + FLOOR(RAND() * 800) -- High stock for volume apparel
-        ELSE 600 + FLOOR(RAND() * 400) -- Moderate stock for home goods
+        WHEN category = 'Electronics' AND unit_cost > 400 THEN 200 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 100) -- Low stock for expensive items
+        WHEN category = 'Electronics' THEN 800 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 400) -- Moderate stock for electronics
+        WHEN category = 'Apparel' THEN 1200 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 800) -- High stock for volume apparel
+        ELSE 600 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 400) -- Moderate stock for home goods
     END as on_hand_qty,
     0 as reserved_qty -- Will be updated after order generation
 FROM products
@@ -316,10 +314,10 @@ SELECT
     'DAL-01' as loc_code,
     -- Dallas gets 60% of Phoenix stock levels
     CASE 
-        WHEN category = 'Electronics' AND unit_cost > 400 THEN 120 + FLOOR(RAND() * 60)
-        WHEN category = 'Electronics' THEN 480 + FLOOR(RAND() * 240)
-        WHEN category = 'Apparel' THEN 720 + FLOOR(RAND() * 480)
-        ELSE 360 + FLOOR(RAND() * 240)
+        WHEN category = 'Electronics' AND unit_cost > 400 THEN 120 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 60)
+        WHEN category = 'Electronics' THEN 480 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 240)
+        WHEN category = 'Apparel' THEN 720 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 480)
+        ELSE 360 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 240)
     END as on_hand_qty,
     0 as reserved_qty
 FROM products;
@@ -530,42 +528,47 @@ BEGIN
     DECLARE v_order_id INT;
     DECLARE v_product_id INT;
     DECLARE v_segment VARCHAR(20);
+    DECLARE v_order_date DATETIME;
+    DECLARE v_date_bucket INT;
     DECLARE i INT DEFAULT 1;
     DECLARE j INT;
     
     -- Generate orders with realistic distribution
     WHILE i <= v_order_count DO
         
-        -- Select customer based on realistic segment distribution
-        -- 50% SMB (1-22), 35% Mid (23-27), 15% Enterprise (28-32)
+        -- Select only valid customer IDs while preserving the intended order mix:
+        -- 50% SMB (1-15), 35% Mid (16-20), 15% Enterprise (21-25).
         IF i <= v_order_count * 0.50 THEN
-            SET v_customer_id = 1 + FLOOR(RAND() * 22); -- SMB customers
+            SET v_customer_id = 1 + MOD(i * 7, 15); -- SMB customers
         ELSEIF i <= v_order_count * 0.85 THEN
-            SET v_customer_id = 23 + FLOOR(RAND() * 5); -- Mid customers
+            SET v_customer_id = 16 + MOD(i * 3, 5); -- Mid customers
         ELSE
-            SET v_customer_id = 28 + FLOOR(RAND() * 5); -- Enterprise customers
+            SET v_customer_id = 21 + MOD(i * 2, 5); -- Enterprise customers
         END IF;
         
         SELECT segment INTO v_segment FROM customers WHERE customer_id = v_customer_id;
         
-        -- Generate realistic order dates with seasonal patterns
+        -- Deterministic seasonal distribution keeps each run comparable:
+        -- 15% Q1, 25% Q2, 35% Q3, 25% Q4.
+        SET v_date_bucket = MOD((i - 1) * 37, 100);
+        SET v_order_date = CASE
+            WHEN v_date_bucket < 15 THEN DATE_ADD('2024-01-01', INTERVAL MOD(i * 53, 90) DAY)
+            WHEN v_date_bucket < 40 THEN DATE_ADD('2024-04-01', INTERVAL MOD(i * 47, 91) DAY)
+            WHEN v_date_bucket < 75 THEN DATE_ADD('2024-07-01', INTERVAL MOD(i * 43, 92) DAY)
+            ELSE DATE_ADD('2024-10-01', INTERVAL MOD(i * 41, 92) DAY)
+        END + INTERVAL MOD(i * 7, 24) HOUR;
+
         INSERT INTO orders (customer_id, order_ts, status, channel, requested_ship_date) VALUES
-        (v_customer_id, 
-         -- Date distribution: 15% Q1, 25% Q2, 35% Q3, 25% Q4 (holiday boost)
-         CASE 
-            WHEN RAND() < 0.15 THEN DATE_ADD('2024-01-01', INTERVAL FLOOR(RAND() * 90) DAY)
-            WHEN RAND() < 0.40 THEN DATE_ADD('2024-04-01', INTERVAL FLOOR(RAND() * 91) DAY)
-            WHEN RAND() < 0.75 THEN DATE_ADD('2024-07-01', INTERVAL FLOOR(RAND() * 92) DAY)
-            ELSE DATE_ADD('2024-10-01', INTERVAL FLOOR(RAND() * 92) DAY)
-         END + INTERVAL FLOOR(RAND() * 24) HOUR,
-         'DELIVERED', -- 95% delivered for analytics
-         -- Channel distribution by segment
-         CASE v_segment
-            WHEN 'SMB' THEN CASE WHEN RAND() < 0.6 THEN 'Web' ELSE 'Marketplace' END
-            WHEN 'Mid' THEN CASE WHEN RAND() < 0.7 THEN 'InsideSales' ELSE 'Web' END
-            ELSE 'InsideSales' -- Enterprise always uses inside sales
-         END,
-         DATE_ADD(CURDATE(), INTERVAL 2 DAY) -- Standard 2-day lead time
+        (
+            v_customer_id,
+            v_order_date,
+            'DELIVERED',
+            CASE v_segment
+                WHEN 'SMB' THEN CASE WHEN MOD(i * 13, 10) < 6 THEN 'Web' ELSE 'Marketplace' END
+                WHEN 'Mid' THEN CASE WHEN MOD(i * 11, 10) < 7 THEN 'InsideSales' ELSE 'Web' END
+                ELSE 'InsideSales'
+            END,
+            DATE_ADD(DATE(v_order_date), INTERVAL 2 DAY)
         );
         
         SET v_order_id = LAST_INSERT_ID();
@@ -573,18 +576,18 @@ BEGIN
         -- Add 1-6 items per order based on segment
         SET j = 1;
         WHILE j <= CASE v_segment 
-            WHEN 'SMB' THEN 1 + FLOOR(RAND() * 2) -- 1-2 items
-            WHEN 'Mid' THEN 2 + FLOOR(RAND() * 3) -- 2-4 items
-            ELSE 3 + FLOOR(RAND() * 4) -- 3-6 items
+            WHEN 'SMB' THEN 1 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 2) -- 1-2 items
+            WHEN 'Mid' THEN 2 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 3) -- 2-4 items
+            ELSE 3 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 4) -- 3-6 items
         END DO
             
             -- Select products with segment preferences
             SET v_product_id = CASE v_segment
                 WHEN 'SMB' THEN CASE
-                    WHEN RAND() < 0.6 THEN 7 + FLOOR(RAND() * 12) -- More apparel
-                    ELSE 1 + FLOOR(RAND() * 18) -- Mixed electronics/home
+                    WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.6 THEN 7 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 12) -- More apparel
+                    ELSE 1 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 18) -- Mixed electronics/home
                 END
-                ELSE 1 + FLOOR(RAND() * 18) -- All products
+                ELSE 1 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 18) -- All products
             END;
             
             -- Insert order items with realistic pricing
@@ -593,9 +596,9 @@ BEGIN
                 v_order_id,
                 v_product_id,
                 CASE v_segment 
-                    WHEN 'SMB' THEN 1 + FLOOR(RAND() * 5) -- 1-5 qty
-                    WHEN 'Mid' THEN 5 + FLOOR(RAND() * 10) -- 5-15 qty
-                    ELSE 10 + FLOOR(RAND() * 20) -- 10-30 qty
+                    WHEN 'SMB' THEN 1 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 5) -- 1-5 qty
+                    WHEN 'Mid' THEN 5 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 10) -- 5-15 qty
+                    ELSE 10 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 20) -- 10-30 qty
                 END,
                 list_price,
                 CASE v_segment
@@ -614,12 +617,12 @@ BEGIN
         INSERT INTO shipments (order_id, ship_ts, promised_delivery_ts, actual_delivery_ts, status, ship_from_loc, carrier, tracking_number)
         SELECT 
             v_order_id,
-            DATE_ADD(order_ts, INTERVAL 1 + FLOOR(RAND() * 2) DAY),
-            DATE_ADD(order_ts, INTERVAL 4 + FLOOR(RAND() * 2) DAY),
-            DATE_ADD(order_ts, INTERVAL 3 + FLOOR(RAND() * 4) DAY), -- 85% on-time
+            DATE_ADD(order_ts, INTERVAL 1 + MOD(i * 7, 2) DAY),
+            DATE_ADD(order_ts, INTERVAL 4 + MOD(i * 11, 2) DAY),
+            DATE_ADD(order_ts, INTERVAL 3 + MOD(i * 5, 4) DAY),
             'DELIVERED',
-            CASE WHEN RAND() < 0.6 THEN 'PHX-01' ELSE 'DAL-01' END,
-            CASE WHEN RAND() < 0.5 THEN 'UPS' ELSE 'FedEx' END,
+            CASE WHEN MOD(i * 17, 10) < 6 THEN 'PHX-01' ELSE 'DAL-01' END,
+            CASE WHEN MOD(i * 19, 2) = 0 THEN 'UPS' ELSE 'FedEx' END,
             CONCAT('TRK', LPAD(v_order_id, 8, '0'))
         FROM orders WHERE order_id = v_order_id;
         
@@ -636,8 +639,8 @@ BEGIN
             END,
             COALESCE(SUM(oi.qty * oi.unit_price - oi.discount), 0),
             COALESCE(SUM(oi.tax), 0),
-            25.00 + (RAND() * 25), -- $25-50 freight
-            COALESCE(SUM(oi.qty * oi.unit_price - oi.discount), 0) + COALESCE(SUM(oi.tax), 0) + 25.00 + (RAND() * 25)
+            25.00 + (RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 25), -- $25-50 freight
+            COALESCE(SUM(oi.qty * oi.unit_price - oi.discount), 0) + COALESCE(SUM(oi.tax), 0) + 25.00 + (RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 25)
         FROM orders o
         JOIN customers c ON o.customer_id = c.customer_id
         JOIN shipments s ON o.order_id = s.order_id
@@ -645,49 +648,57 @@ BEGIN
         WHERE o.order_id = v_order_id
         GROUP BY o.order_id, s.ship_ts, c.payment_terms;
         
-        -- Generate payments (90% payment rate)
-        IF RAND() < 0.90 THEN
+        -- Deterministic 90% payment rate with timing relative to contractual due date.
+        -- This keeps payment-term mix from creating artificial quarter-to-quarter noise.
+        IF MOD(i * 17, 10) <> 0 THEN
             INSERT INTO payments (invoice_id, payment_ts, method, amount, reference_number)
             SELECT 
-                i.invoice_id,
+                inv.invoice_id,
                 CASE c.payment_terms
                     WHEN 'Prepaid' THEN o.order_ts
-                    ELSE DATE_ADD(i.due_date, INTERVAL -5 + FLOOR(RAND() * 15) DAY) -- ±5-10 days from due
+                    ELSE DATE_ADD(inv.due_date, INTERVAL -5 + MOD(i * 19, 15) DAY)
                 END,
                 CASE c.segment
-                    WHEN 'Enterprise' THEN CASE WHEN RAND() < 0.6 THEN 'ACH' ELSE 'Wire' END
-                    WHEN 'Mid' THEN CASE WHEN RAND() < 0.4 THEN 'ACH' WHEN RAND() < 0.7 THEN 'Card' ELSE 'Check' END
-                    ELSE CASE WHEN RAND() < 0.5 THEN 'Card' ELSE 'ACH' END
+                    WHEN 'Enterprise' THEN CASE WHEN MOD(i * 23, 10) < 6 THEN 'ACH' ELSE 'Wire' END
+                    WHEN 'Mid' THEN CASE
+                        WHEN MOD(i * 29, 10) < 4 THEN 'ACH'
+                        WHEN MOD(i * 29, 10) < 7 THEN 'Card'
+                        ELSE 'Check'
+                    END
+                    ELSE CASE WHEN MOD(i * 31, 10) < 5 THEN 'Card' ELSE 'ACH' END
                 END,
-                CASE WHEN RAND() < 0.95 THEN i.total ELSE i.total * (0.3 + RAND() * 0.6) END, -- 95% full payment
-                CONCAT('PAY', DATE_FORMAT(NOW(), '%Y%m%d'), LPAD(i.invoice_id, 6, '0'))
-            FROM invoices i
-            JOIN orders o ON i.order_id = o.order_id  
+                CASE
+                    WHEN MOD(i * 37, 20) <> 0 THEN inv.total
+                    ELSE inv.total * 0.60
+                END,
+                CONCAT('PAY', DATE_FORMAT(o.order_ts, '%Y%m%d'), LPAD(inv.invoice_id, 6, '0'))
+            FROM invoices inv
+            JOIN orders o ON inv.order_id = o.order_id
             JOIN customers c ON o.customer_id = c.customer_id
-            WHERE i.order_id = v_order_id;
+            WHERE inv.order_id = v_order_id;
         END IF;
         
         -- Generate returns (3% return rate)
-        IF RAND() < 0.03 THEN
+        IF MOD(i * 41, 100) < 3 THEN
             INSERT INTO returns (order_id, product_id, qty, reason_code, rma_ts, disposition, refund_amount, processed_by)
             SELECT 
                 oi.order_id,
                 oi.product_id,
-                GREATEST(1, FLOOR(oi.qty * (0.2 + RAND() * 0.6))), -- 20-80% of original qty
+                GREATEST(1, FLOOR(oi.qty * (0.2 + RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 0.6))), -- 20-80% of original qty
                 CASE 
-                    WHEN RAND() < 0.4 THEN 'Damaged'
-                    WHEN RAND() < 0.65 THEN 'Wrong Item'
-                    WHEN RAND() < 0.80 THEN 'Defective'
+                    WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.4 THEN 'Damaged'
+                    WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.65 THEN 'Wrong Item'
+                    WHEN RAND(@o2c_rng_seed := @o2c_rng_seed + 1) < 0.80 THEN 'Defective'
                     ELSE 'Customer Error'
                 END,
-                DATE_ADD(s.actual_delivery_ts, INTERVAL 5 + FLOOR(RAND() * 25) DAY),
+                DATE_ADD(s.actual_delivery_ts, INTERVAL 5 + FLOOR(RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 25) DAY),
                 'Resell',
-                oi.unit_price * GREATEST(1, FLOOR(oi.qty * (0.2 + RAND() * 0.6))),
+                oi.unit_price * GREATEST(1, FLOOR(oi.qty * (0.2 + RAND(@o2c_rng_seed := @o2c_rng_seed + 1) * 0.6))),
                 'auto_system'
             FROM order_items oi
             JOIN shipments s ON oi.order_id = s.order_id
             WHERE oi.order_id = v_order_id
-            ORDER BY RAND()
+            ORDER BY RAND(@o2c_rng_seed := @o2c_rng_seed + 1)
             LIMIT 1;
         END IF;
         
@@ -713,6 +724,10 @@ BEGIN
 END$
 
 DELIMITER ;
+
+-- Seed the session random generator so the synthetic dataset is reproducible
+-- across local runs and CI. Subsequent RAND(@o2c_rng_seed := @o2c_rng_seed + 1) calls use this seeded sequence.
+SET @o2c_seed_initializer = RAND(20241005);
 
 -- Execute the data generation procedure
 CALL GenerateO2CData();
@@ -759,9 +774,9 @@ INSERT INTO db_info (info_key, info_value) VALUES
 ON DUPLICATE KEY UPDATE info_value = VALUES(info_value);
 
 -- Display comprehensive setup summary
-SELECT '========================================' as separator;
+SELECT '========================================' as separator_line;
 SELECT 'O2C DATABASE SETUP COMPLETE!' as setup_status;
-SELECT '========================================' as separator;
+SELECT '========================================' as separator_line;
 
 -- Data volume summary
 SELECT 'DATA VOLUMES' as summary_section;
@@ -785,18 +800,18 @@ UNION ALL
 SELECT 'returns', COUNT(*), '3% return rate with reason codes' FROM returns;
 
 -- Business metrics summary
-SELECT '' as separator;
+SELECT '' as separator_line;
 SELECT 'KEY BUSINESS METRICS' as summary_section;
 
 SELECT 
     'Total Revenue Generated' as metric,
-    CONCAT(', FORMAT(SUM(oi.qty * oi.unit_price - oi.discount), 0)) as value,
+    FORMAT(SUM(oi.qty * oi.unit_price - oi.discount), 0) as metric_value,
     'Gross revenue before tax and freight' as notes
 FROM order_items oi
 UNION ALL
 SELECT 
     'Average Order Value',
-    CONCAT(', FORMAT(AVG(order_values.total), 0)),
+    FORMAT(AVG(order_values.total), 0),
     'Mean order value across all segments'
 FROM (
     SELECT SUM(oi.qty * oi.unit_price - oi.discount) as total
@@ -806,7 +821,7 @@ FROM (
 UNION ALL
 SELECT 
     'Outstanding A/R Balance',
-    CONCAT(', FORMAT(SUM(i.total - COALESCE(p.paid, 0)), 0)),
+    FORMAT(SUM(i.total - COALESCE(p.paid, 0)), 0),
     '10% of invoices remain unpaid (realistic)'
 FROM invoices i
 LEFT JOIN (
@@ -825,12 +840,12 @@ SELECT
         (SELECT SUM(oi.qty * oi.unit_price - oi.discount) / 30 
          FROM order_items oi 
          JOIN orders o ON oi.order_id = o.order_id 
-         WHERE o.order_ts >= DATE_SUB(CURDATE(), INTERVAL 30 DAY))
+         WHERE o.order_ts >= DATE_SUB((SELECT MAX(order_ts) FROM orders), INTERVAL 30 DAY))
     , 1), ' days'),
     'Key cash flow metric (target: <45 days)';
 
 -- Available business views
-SELECT '' as separator;
+SELECT '' as separator_line;
 SELECT 'BUSINESS INTELLIGENCE VIEWS READY' as summary_section;
 SELECT 
     'View Name' as view_name,
@@ -863,7 +878,7 @@ SELECT
     'O2C cycle time, delivery performance, SLA adherence';
 
 -- Next steps guidance
-SELECT '' as separator;
+SELECT '' as separator_line;
 SELECT 'NEXT STEPS' as guidance_section;
 SELECT '1. Explore data: SELECT * FROM vw_order_summary LIMIT 10;' as step_1;
 SELECT '2. Run analytics: Use queries from examples/dashboard_queries.sql' as step_2;

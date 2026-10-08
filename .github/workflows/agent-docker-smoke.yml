@@ -1,0 +1,75 @@
+name: Agent Docker smoke test
+
+on:
+  push:
+    branches:
+      - feature/process-improvement-agent
+    paths:
+      - "agent/Dockerfile"
+      - "agent/.dockerignore"
+      - "agent/requirements.txt"
+      - "agent/app/**"
+      - "agent/policies/**"
+      - "docker-compose.yml"
+      - ".github/workflows/agent-docker-smoke.yml"
+  pull_request:
+    paths:
+      - "agent/Dockerfile"
+      - "agent/.dockerignore"
+      - "agent/requirements.txt"
+      - "agent/app/**"
+      - "agent/policies/**"
+      - "docker-compose.yml"
+      - ".github/workflows/agent-docker-smoke.yml"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate compose configuration
+        run: docker compose config
+
+      - name: Build agent image
+        run: docker compose build agent
+
+      - name: Start database and agent
+        run: docker compose up -d db agent
+
+      - name: Wait for agent health
+        shell: bash
+        run: |
+          for attempt in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:8000/health | grep -q '"status":"ok"'; then
+              echo "Agent API is healthy."
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose ps
+          docker compose logs agent db
+          exit 1
+
+      - name: Verify analyst UI is served
+        run: |
+          curl --fail --silent http://127.0.0.1:8000/ > /tmp/agent-ui.html
+          grep -q 'O2C Process Improvement Agent' /tmp/agent-ui.html
+          grep -q 'Run investigation' /tmp/agent-ui.html
+
+      - name: Verify session endpoint is reachable without model call
+        run: |
+          status=$(curl -s -o /tmp/session.json -w "%{http_code}" http://127.0.0.1:8000/agent/session/smoke-session)
+          test "$status" = "404"
+          grep -q 'session not found' /tmp/session.json
+
+      - name: Show service logs on failure
+        if: failure()
+        run: docker compose logs agent db
+
+      - name: Shut down services
+        if: always()
+        run: docker compose down -v

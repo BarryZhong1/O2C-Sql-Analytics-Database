@@ -1,0 +1,97 @@
+{
+  "scenario_id": "scenario_v1_marketplace_bottleneck",
+  "status": "validated_reproducible",
+  "validated_at": "2026-10-06",
+  "validation_runs": [
+    {
+      "workflow_run_id": 37421942102,
+      "head_sha": "5b37c7460669e6c40bf4956f4a8ef39747a6ee67",
+      "result": "success"
+    },
+    {
+      "workflow_run_id": 37422033397,
+      "head_sha": "0579bc4b4b723b89cfc650ab9b898e38c637560a",
+      "result": "success"
+    }
+  ],
+  "baseline_period": {
+    "label": "Q2 2024",
+    "start_date": "2024-04-01",
+    "end_date": "2024-06-30",
+    "record_count": 200,
+    "total_o2c_cycle_days": 33.28,
+    "order_to_ship_days": 1.48,
+    "ship_to_invoice_days": 1,
+    "invoice_to_payment_days": 30.76
+  },
+  "problem_period": {
+    "label": "Q3 2024",
+    "start_date": "2024-07-01",
+    "end_date": "2024-09-30",
+    "record_count": 280,
+    "total_o2c_cycle_days": 33.71,
+    "order_to_ship_days": 2.09,
+    "ship_to_invoice_days": 1,
+    "invoice_to_payment_days": 30.49
+  },
+  "period_change": {
+    "total_o2c_cycle_days": {
+      "absolute_days": 0.43,
+      "percent": 1.29
+    },
+    "order_to_ship_days": {
+      "absolute_days": 0.61,
+      "percent": 41.22
+    },
+    "ship_to_invoice_days": {
+      "absolute_days": 0,
+      "percent": 0
+    },
+    "invoice_to_payment_days": {
+      "absolute_days": -0.27,
+      "percent": -0.88
+    }
+  },
+  "channel_order_to_ship_days": {
+    "Q2": {
+      "Web": 1.54,
+      "Marketplace": 1.45,
+      "InsideSales": 1.44
+    },
+    "Q3": {
+      "Web": 1.54,
+      "Marketplace": 4.62,
+      "InsideSales": 1.47
+    },
+    "change": {
+      "Web": 0,
+      "Marketplace": 3.17,
+      "InsideSales": 0.03
+    }
+  },
+  "injected_cohorts": {
+    "primary_marketplace_orders": 40,
+    "q3_marketplace_orders": 52,
+    "primary_share_pct": 76.92,
+    "secondary_enterprise_paid_invoices": 8
+  },
+  "fixed_workflow": {
+    "candidate_bottleneck": "order_to_ship_days",
+    "illustrative_scenario": {
+      "assumption": "20% reduction in Q3 order-to-ship duration",
+      "baseline_modeled_cash_cycle_days": 33.58,
+      "scenario_modeled_cash_cycle_days": 33.16,
+      "modeled_days_saved": 0.42,
+      "modeled_percent_improvement": 1.24
+    }
+  },
+  "acceptance_checks": {
+    "q3_total_o2c_worse_than_q2": true,
+    "order_to_ship_largest_stage_deterioration": true,
+    "marketplace_order_to_ship_worsened": true,
+    "marketplace_deterioration_exceeds_other_channels": true,
+    "fixed_workflow_selects_order_to_ship": true,
+    "fixed_workflow_produces_scenario": true,
+    "repeated_run_metrics_identical": true
+  }
+}

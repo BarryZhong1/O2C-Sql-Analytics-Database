@@ -1,0 +1,69 @@
+name: Portfolio demo smoke test
+
+on:
+  push:
+    paths:
+      - "agent/**"
+      - "sql/**"
+      - "docker-compose.yml"
+      - ".github/workflows/agent-demo-smoke.yml"
+  pull_request:
+    paths:
+      - "agent/**"
+      - "sql/**"
+      - "docker-compose.yml"
+      - ".github/workflows/agent-demo-smoke.yml"
+
+jobs:
+  demo-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate launcher syntax
+        run: bash -n agent/scripts/start_demo.sh
+
+      - name: Start demo using the documented one-command launcher
+        env:
+          MODEL_BACKEND: mock
+        run: bash agent/scripts/start_demo.sh
+
+      - name: Verify analyst UI
+        run: |
+          curl --fail --silent http://localhost:8000/ > /tmp/demo-index.html
+          grep -q "Full diagnosis" /tmp/demo-index.html
+          grep -q "Free demo mode" /tmp/demo-index.html
+
+      - name: Run and verify the main portfolio demo
+        run: |
+          mkdir -p agent/artifacts
+          curl --fail --silent \
+            -X POST http://localhost:8000/agent/ask \
+            -H "Content-Type: application/json" \
+            -d '{"question":"Investigate why O2C cycle time worsened in Q3 2024 versus Q2 2024. Identify the stage that deteriorated most, drill into the strongest driver, and test a realistic improvement scenario."}' \
+            > agent/artifacts/demo_smoke_response.json
+          python agent/scripts/verify_demo_response.py agent/artifacts/demo_smoke_response.json
+
+      - name: Upload demo smoke artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portfolio-demo-smoke-${{ github.run_number }}
+          path: agent/artifacts/demo_smoke_response.json
+          if-no-files-found: warn
+
+      - name: Show service logs on failure
+        if: failure()
+        run: docker compose logs db agent
+
+      - name: Shut down demo
+        if: always()
+        run: docker compose down -v --remove-orphans
