@@ -114,6 +114,15 @@ class ScriptedMockResponses:
         except (TypeError, ValueError):
             return str(value)
 
+    @staticmethod
+    def _stage_label(stage: Any) -> str:
+        labels = {
+            "order_to_ship_days": "Order → Ship",
+            "ship_to_invoice_days": "Ship → Invoice",
+            "invoice_to_payment_days": "Invoice → Payment",
+        }
+        return labels.get(str(stage), str(stage or "N/A"))
+
     def _showcase_answer(self, results: dict[str, Any]) -> str:
         stages = results.get("compare_stage_performance", {})
         channel = results.get("analyze_process", {})
@@ -150,7 +159,7 @@ class ScriptedMockResponses:
         return f"""[MOCK DEMO — scripted orchestration; SQL, retrieval, and scenario outputs are real project results]
 
 FINDING
-Q3 average O2C cycle time is {self._fmt(current_total)} days versus {self._fmt(comparison_total)} days in Q2. The stage with the largest deterioration is {top_stage.get("stage", "N/A")}: {self._fmt(top_stage.get("comparison_days"))} → {self._fmt(top_stage.get("current_days"))} days ({self._fmt(top_stage.get("absolute_change_days"))} days).
+Q3 average O2C cycle time is {self._fmt(current_total)} days versus {self._fmt(comparison_total)} days in Q2. The stage with the largest deterioration is {self._stage_label(top_stage.get("stage"))}: {self._fmt(top_stage.get("comparison_days"))} → {self._fmt(top_stage.get("current_days"))} days ({self._fmt(top_stage.get("absolute_change_days"))} days).
 
 STRONGEST DRIVER
 The largest channel-level deterioration is {top_channel.get("dimension_value", "N/A")}: {self._fmt(top_channel.get("comparison_value"))} → {self._fmt(top_channel.get("current_value"))} days, a change of {self._fmt(top_channel.get("absolute_change"))} days.
@@ -186,7 +195,7 @@ This free mock mode proves the application flow and uses real database/tool resu
             top = ranked[0] if ranked else {}
             return (
                 "[MOCK BACKEND] Period comparison completed with the real analytics tool. "
-                f"The largest deterioration is {top.get('stage', 'N/A')}: "
+                f"The largest deterioration is {self._stage_label(top.get('stage'))}: "
                 f"{self._fmt(top.get('comparison_days'))} → "
                 f"{self._fmt(top.get('current_days'))} days "
                 f"({self._fmt(top.get('absolute_change_days'))} days). "
