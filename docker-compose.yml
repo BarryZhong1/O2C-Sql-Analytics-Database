@@ -23,6 +23,7 @@ services:
     build:
       context: ./agent
     environment:
+      MODEL_BACKEND: ${MODEL_BACKEND:-mock}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5}
       DATABASE_URL: mysql+pymysql://app:app_pw@db:3306/o2c
