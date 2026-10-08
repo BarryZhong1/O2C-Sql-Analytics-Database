@@ -6,7 +6,9 @@
 
 This project extends an Order-to-Cash analytical database into a deployable AI-assisted process-improvement system. A business analyst can ask an operational question in natural language; the agent chooses from approved analytics, business-context retrieval, and deterministic scenario tools; the system returns an evidence-backed recommendation while preserving human approval for operational changes.
 
-Final live-evaluation result: **[insert trace pass rate]** deterministic trace pass rate and **[insert semantic pass rate]** semantic rubric pass rate across **[insert completed cases]** completed behavior cases.
+Free mocked-integration result: **[insert mock trace pass rate]** deterministic trace pass rate across **[insert completed mock cases]** scripted behavior cases. This validates system wiring and deterministic tool behavior, not real-model reasoning.
+
+Optional real-model result (only if actually run): **[insert real trace pass rate / not run]** deterministic trace pass rate and **[insert semantic pass rate / not run]** semantic rubric pass rate.
 
 ## 2. Business problem
 
@@ -117,18 +119,30 @@ The live agent also captures operational observability for each run:
 
 These runtime measures help discuss efficiency and operating characteristics, but they are not treated as answer-quality scores.
 
-## 8. Final live results
+## 8. Evaluation results
 
-Paste or summarize `artifacts/evaluation_summary.md` here after running the full live suite.
+### Free mocked integration results
 
-### Overall results
+Paste or summarize `artifacts/mock_evaluation_summary.md` here.
 
-- Model: **[model]**
+- Backend: **scripted-mock-v1**
 - Cases requested: **[n]**
 - Cases completed: **[n]**
 - Deterministic trace pass rate: **[rate]**
-- Semantic rubric pass rate: **[rate]**
-- Critical semantic failures: **[none / list]**
+- Semantic rubric: **not claimed from mock mode**
+
+State explicitly that these results validate orchestration, tool arguments, deterministic calculations, database integration, and the evaluation harness—not real LLM reasoning quality.
+
+### Optional real-model results
+
+Only fill this section after an actual `MODEL_BACKEND=openai` run.
+
+- Model: **[model / not run]**
+- Cases requested: **[n / not run]**
+- Cases completed: **[n / not run]**
+- Deterministic trace pass rate: **[rate / not run]**
+- Semantic rubric pass rate: **[rate / not run]**
+- Critical semantic failures: **[none / list / not run]**
 - Average end-to-end agent latency: **[ms]**
 - Total model calls: **[n]**
 - Input tokens: **[n]**
@@ -205,7 +219,7 @@ Prioritize only extensions with a clear business need, for example:
 
 ## 13. Resume/interview translation
 
-Example project description after live results are measured:
+Example project description that is safe before any paid/live model run:
 
 > Built a deployable AI-assisted Order-to-Cash process-improvement agent using FastAPI, OpenAI Responses API, MySQL, deterministic Python scenario modeling, bounded state/memory, runtime observability, and layered evaluation; designed a controlled business benchmark and evaluated tool-selection, causal-discipline, and approval-boundary behavior across seven test cases.
 
