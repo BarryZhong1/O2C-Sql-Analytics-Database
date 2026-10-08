@@ -33,15 +33,23 @@ def _paragraphs(path: Path) -> list[dict[str, str]]:
     current_heading = ""
     results: list[dict[str, str]] = []
     for block in blocks:
-        first_line = block.splitlines()[0].strip()
+        lines = block.splitlines()
+        first_line = lines[0].strip()
+        paragraph = block
+
         if first_line.startswith("#"):
             current_heading = first_line.lstrip("#").strip()
+            paragraph = "\n".join(lines[1:]).strip()
+            # Markdown headings are metadata for ranking/context, not useful
+            # standalone retrieval results. The next paragraph inherits them.
+            if not paragraph:
+                continue
 
         results.append(
             {
                 "source": path.name,
                 "heading": current_heading,
-                "paragraph": block,
+                "paragraph": paragraph,
             }
         )
     return results
