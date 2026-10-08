@@ -14,7 +14,7 @@ Agent API + analyst UI :8000
         |
         +----> MySQL O2C database :3306
         |
-        +----> OpenAI Responses API
+        +----> model backend (scripted mock by default / OpenAI optional)
         |
         +----> local business-context documents
         |
@@ -26,16 +26,23 @@ Adminer :8080 ----> MySQL
 ## Prerequisites
 
 - Docker with Compose v2
-- an OpenAI API key for `/agent/*` model calls
 
-The analyst UI, `/health`, fixed workflow, database, and container smoke-test paths can load without the model API key. Running an agent investigation requires it.
+No API key is required for the default `MODEL_BACKEND=mock` portfolio demo. An OpenAI API key is needed only if you later switch to `MODEL_BACKEND=openai` for real-model validation.
 
-## Start the stack
+## Fastest demo start
 
 From the repository root:
 
 ```bash
-export OPENAI_API_KEY="..."
+bash agent/scripts/start_demo.sh
+```
+
+This creates a clean reproducible demo dataset, applies Scenario V1, starts the agent in free mock mode, waits for health checks, and prints the UI URL.
+
+For manual startup:
+
+```bash
+export MODEL_BACKEND=mock
 docker compose up -d --build db agent adminer
 ```
 
@@ -160,8 +167,9 @@ docker compose down -v
 
 The agent container receives:
 
-- `OPENAI_API_KEY`
-- `OPENAI_MODEL` (default `gpt-5` in the current project config)
+- `MODEL_BACKEND` (`mock` by default; `openai` optional)
+- `OPENAI_API_KEY` (required only for `MODEL_BACKEND=openai`)
+- `OPENAI_MODEL` (used only for the OpenAI backend)
 - `DATABASE_URL=mysql+pymysql://app:app_pw@db:3306/o2c`
 - `POLICY_PATH=policies`
 - `STATE_DB_PATH=/state/agent_state.db`
@@ -192,4 +200,6 @@ This is a portfolio/demo deployment, not a production security certification. Pr
 7. a session-status request reaches the FastAPI service;
 8. the stack is torn down after the test.
 
-The smoke test deliberately does not call the external model API, so it does not require an API secret in CI.
+The smoke test deliberately does not call the external model API, so it does not require an API secret in CI. A separate mocked behavior workflow also runs all seven scripted integration cases against the real database/tools with no API cost.
+
+See `docs/demo_quickstart.md` for the recommended presentation path.
