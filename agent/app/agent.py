@@ -4,9 +4,8 @@ import json
 import time
 from typing import Any
 
-from openai import OpenAI
-
 from app.config import settings
+from app.model_backends import backend_model_name, create_model_client
 from app.observability import aggregate_usage, response_observation
 from app.tools.policy_retriever import retrieve_policy
 from app.tools.process_analytics import (
@@ -264,14 +263,13 @@ def ask_agent(
     max_turns: int = 8,
     previous_response_id: str | None = None,
     preferences: dict[str, Any] | None = None,
+    backend: str | None = None,
 ) -> dict[str, Any]:
-    if not settings.openai_api_key:
-        raise RuntimeError("OPENAI_API_KEY is not configured.")
-
-    client = OpenAI(api_key=settings.openai_api_key)
+    selected_backend, client = create_model_client(backend)
+    model_name = backend_model_name(selected_backend)
     instructions = _build_instructions(preferences)
     initial_request: dict[str, Any] = {
-        "model": settings.openai_model,
+        "model": model_name,
         "instructions": instructions,
         "tools": TOOLS,
         "input": [{"role": "user", "content": question}],
@@ -301,7 +299,8 @@ def ask_agent(
                 "response_id": response.id,
                 "response_ids": response_ids,
                 "parent_response_id": previous_response_id,
-                "model": settings.openai_model,
+                "model": model_name,
+                "backend": selected_backend,
                 "tool_turns": turn - 1,
                 "tool_call_count": len(trace),
                 "model_call_count": len(model_trace),
@@ -340,7 +339,7 @@ def ask_agent(
         parent_id = response.id
         model_started = time.perf_counter()
         response = client.responses.create(
-            model=settings.openai_model,
+            model=model_name,
             instructions=instructions,
             tools=TOOLS,
             previous_response_id=parent_id,
