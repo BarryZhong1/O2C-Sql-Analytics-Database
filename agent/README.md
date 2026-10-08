@@ -46,7 +46,7 @@ Business user / analyst UI
           +--> bounded analyst preferences
           |
           v
-AI investigator (OpenAI Responses API)
+AI investigator (mock by default / OpenAI Responses API optional)
           |
           +------------------+-----------------------+
           |                  |                       |
@@ -139,7 +139,17 @@ agent/
 From the repository root:
 
 ```bash
+# Free default: scripted mock backend, no API key required
+export MODEL_BACKEND=mock
+docker compose up -d --build db agent adminer
+```
+
+To switch the same application to the real OpenAI backend later:
+
+```bash
+export MODEL_BACKEND=openai
 export OPENAI_API_KEY="..."
+export OPENAI_MODEL="gpt-5"
 docker compose up -d --build db agent adminer
 ```
 
@@ -217,18 +227,34 @@ The project uses layered evaluation rather than one subjective score:
 3. **Semantic rubric** — scores evidence grounding, diagnostic reasoning, causal discipline, scenario transparency, decision usefulness, risks, and approval boundaries.
 4. **Optional LLM-as-Judge** — applies the documented rubric to live answers while leaving numerical/tool truth to deterministic checks.
 
-Run all live behavior cases after configuring the database and API key:
+Run the free mocked behavior suite after configuring the database:
 
 ```bash
 cd agent
-python scripts/run_live_evals.py
+python scripts/run_live_evals.py --backend mock --output artifacts/mock_eval_report.json
+python scripts/build_eval_summary.py \\
+  --live artifacts/mock_eval_report.json \\
+  --semantic artifacts/no_semantic_report.json \\
+  --output artifacts/mock_evaluation_summary.md
+```
+
+For optional real-model validation later:
+
+```bash
+export MODEL_BACKEND=openai
+export OPENAI_API_KEY="..."
+cd agent
+python scripts/run_live_evals.py --backend openai
 python scripts/run_semantic_judge.py
 python scripts/build_eval_summary.py
 ```
 
-A manual GitHub Actions workflow, **Agent live behavior evals**, rebuilds Scenario V1, recalibrates it, runs all seven live cases, optionally applies the semantic judge, generates a Markdown evaluation summary, and uploads the artifacts. It is manual-only to avoid API cost on every push.
+GitHub Actions now has two evidence paths:
 
-See `evals/README.md`.
+- **Agent mocked behavior evals** — free, automatic, no API key; exercises the real DB/tools/orchestration with a scripted model boundary.
+- **Agent live behavior evals** — optional real OpenAI API validation; requires `OPENAI_API_KEY` and can apply the semantic judge.
+
+Mock outputs are labeled and must not be reported as real-model performance. See `docs/testing_modes.md` and `evals/README.md`.
 
 ## Demo and final report
 
@@ -251,7 +277,7 @@ The automatic Docker smoke test does **not** call the model API.
 - **P1 — Workflow baseline:** implemented and benchmarked.
 - **P2 — Agent tools:** implemented with dynamic tool selection and observable traces.
 - **P3 — Context/memory:** short-term session state and bounded analyst preferences implemented.
-- **P4 — Quality:** deterministic calibration/trace checks, semantic rubric, optional LLM judge, live-eval runner, and summary generator implemented; full API-backed results still need to be recorded.
+- **P4 — Quality:** deterministic calibration/trace checks, free mocked end-to-end behavior evaluation, semantic rubric, optional LLM judge, real-API runner, and summary generator implemented; full API-backed results are optional future evidence.
 - **P5 — Deployment/demo:** Dockerized API, analyst UI, architecture documentation, demo script, and result-gated final report template implemented.
 
-The next evidence-generating milestone is the full live seven-case evaluation against Scenario V1, followed by prompt/tool tuning only where the recorded failures justify it.
+The current default evidence milestone is the free seven-case mocked integration suite against Scenario V1. A real OpenAI seven-case run remains available later as an optional higher-confidence behavioral validation step.
