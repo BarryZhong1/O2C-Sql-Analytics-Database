@@ -85,13 +85,14 @@ jobs:
         continue-on-error: true
         working-directory: agent
         env:
+          MODEL_BACKEND: openai
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: ${{ env.EVAL_MODEL }}
           DATABASE_URL: mysql+pymysql://app:app_pw@localhost:3306/o2c
           POLICY_PATH: policies
           STATE_DB_PATH: artifacts/live-eval-state.db
           PYTHONPATH: .
-        run: python scripts/run_live_evals.py --output artifacts/live_eval_report.json
+        run: python scripts/run_live_evals.py --backend openai --output artifacts/live_eval_report.json
 
       - name: Run semantic rubric judge
         id: semantic
