@@ -63,6 +63,55 @@ jobs:
           PYTHONPATH: .
         run: python scripts/calibrate_scenario_v1.py | tee ../scenario-v1-mock-calibration.json
 
+      - name: Start mock demo API
+        env:
+          MODEL_BACKEND: mock
+        run: docker compose up -d --build agent
+
+      - name: Wait for mock demo API
+        run: |
+          for attempt in {1..60}; do
+            if curl --fail --silent http://localhost:8000/health > /tmp/demo-health.json; then
+              python - <<'PY'
+import json
+payload = json.load(open("/tmp/demo-health.json"))
+assert payload["status"] == "ok"
+assert payload["model_backend"] == "mock"
+print(payload)
+PY
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose logs agent
+          exit 1
+
+      - name: Verify full portfolio demo through FastAPI
+        run: |
+          mkdir -p agent/artifacts
+          curl --fail --silent \
+            -X POST http://localhost:8000/agent/ask \
+            -H "Content-Type: application/json" \
+            -d '{"question":"Investigate why O2C cycle time worsened in Q3 2024 versus Q2 2024. Identify the stage that deteriorated most, drill into the strongest driver, and test a realistic improvement scenario."}' \
+            > agent/artifacts/demo_api_response.json
+          python - <<'PY'
+import json
+path = "agent/artifacts/demo_api_response.json"
+payload = json.load(open(path))
+assert payload["backend"] == "mock", payload
+assert payload["tool_call_count"] == 4, payload["tool_trace"]
+assert [item["tool"] for item in payload["tool_trace"]] == [
+    "compare_stage_performance",
+    "analyze_process",
+    "retrieve_policy",
+    "simulate_stage_improvement",
+]
+answer = payload["answer"]
+for expected in ["FINDING", "Marketplace", "WHAT-IF SCENARIO", "NEXT ACTION", "DEMO NOTE"]:
+    assert expected in answer, (expected, answer)
+print("Full portfolio demo API path passed.")
+PY
+
       - name: Run free mocked agent eval suite
         working-directory: agent
         env:
@@ -89,6 +138,7 @@ jobs:
           path: |
             agent/artifacts/mock_eval_report.json
             agent/artifacts/mock_evaluation_summary.md
+            agent/artifacts/demo_api_response.json
             scenario-v1-mock-calibration.json
           if-no-files-found: error
 
