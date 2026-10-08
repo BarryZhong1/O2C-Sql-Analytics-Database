@@ -16,9 +16,15 @@ DEFAULT_OUTPUT = Path("artifacts/live_eval_report.json")
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Run one or more agent evaluation prompts against the live Responses API, "
+            "Run one or more agent evaluation prompts against the configured model backend, "
             "capture tool traces, and apply deterministic trace checks."
         )
+    )
+    parser.add_argument(
+        "--backend",
+        choices=["mock", "openai"],
+        default="mock",
+        help="Model backend to evaluate. mock is free and scripted; openai uses the real Responses API.",
     )
     parser.add_argument(
         "--case",
@@ -54,9 +60,9 @@ def _select_cases(case_ids: list[str] | None) -> list[dict[str, Any]]:
     return selected
 
 
-def run_case(case: dict[str, Any], max_turns: int) -> dict[str, Any]:
+def run_case(case: dict[str, Any], max_turns: int, backend: str) -> dict[str, Any]:
     try:
-        agent_run = ask_agent(case["input"], max_turns=max_turns)
+        agent_run = ask_agent(case["input"], max_turns=max_turns, backend=backend)
         trace_report = evaluate_agent_run(case["id"], agent_run)
         return {
             "case_id": case["id"],
@@ -82,7 +88,7 @@ def main() -> int:
     args = parse_args()
     cases = _select_cases(args.case_ids)
 
-    results = [run_case(case, args.max_turns) for case in cases]
+    results = [run_case(case, args.max_turns, args.backend) for case in cases]
     completed = [result for result in results if result["status"] == "completed"]
     passed = [
         result
@@ -92,7 +98,11 @@ def main() -> int:
 
     report = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "eval_layer": "live_agent_plus_deterministic_trace_checks",
+        "eval_layer": "agent_plus_deterministic_trace_checks",
+        "model_backend": args.backend,
+        "evidence_scope": (
+            "real_model_behavior" if args.backend == "openai" else "scripted_mock_orchestration_only"
+        ),
         "cases_requested": len(cases),
         "cases_completed": len(completed),
         "trace_checks_passed": len(passed),
@@ -100,7 +110,7 @@ def main() -> int:
             round(len(passed) / len(completed), 4) if completed else None
         ),
         "semantic_scoring_status": (
-            "not_yet_automated; review expected_behavior manually or add rubric judge"
+            "available separately for real API runs; mock runs validate orchestration and deterministic behavior only"
         ),
         "results": results,
     }
