@@ -48,3 +48,22 @@ def test_retrieve_policy_reports_missing_path(tmp_path, monkeypatch):
 
     assert result["matches"] == []
     assert "warning" in result
+
+
+def test_heading_only_blocks_are_not_returned_as_matches(tmp_path, monkeypatch):
+    source = tmp_path / "changes.md"
+    source.write_text(
+        "# Marketplace promotional review step\n\n"
+        "A manual review step was introduced for Marketplace orders on July 1.",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(policy_retriever.settings, "policy_path", str(source))
+
+    result = policy_retriever.retrieve_policy(
+        "Marketplace promotional review",
+        top_k=1,
+    )
+
+    assert result["matches"][0]["heading"] == "Marketplace promotional review step"
+    assert result["matches"][0]["paragraph"].startswith("A manual review step")
+    assert not result["matches"][0]["paragraph"].startswith("#")
