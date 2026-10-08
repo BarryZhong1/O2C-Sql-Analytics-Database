@@ -63,6 +63,11 @@
     #status { min-height: 20px; margin-top: 10px; font-size: 13px; color: var(--muted); }
     #status.good { color: var(--good); }
     #status.bad { color: var(--bad); }
+    .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+    .metric-card { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+    .metric-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+    .metric-value { font-size: 22px; font-weight: 800; margin-top: 5px; }
+    .metric-note { color: var(--muted); font-size: 11px; margin-top: 4px; }
     #answer {
       white-space: pre-wrap;
       line-height: 1.6;
@@ -88,7 +93,7 @@
     .backend-banner strong { color: var(--text); }
     .presets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0 4px; }
     .preset { margin: 0; padding: 8px; font-size: 12px; background: #1e3a5f; border-color: #31577f; }
-    @media (max-width: 800px) { .grid, .row, .presets { grid-template-columns: 1fr; } }
+    @media (max-width: 800px) { .grid, .row, .presets, .metric-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -155,6 +160,29 @@
   </div>
 
   <section class="card" style="margin-top:18px">
+    <h2>Investigation result</h2>
+    <div class="metric-grid">
+      <div class="metric-card">
+        <div class="metric-label">Q3 O2C cycle</div>
+        <div class="metric-value" id="metric-cycle">—</div>
+        <div class="metric-note" id="metric-cycle-note">Run Full diagnosis</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Largest stage deterioration</div>
+        <div class="metric-value" id="metric-stage">—</div>
+        <div class="metric-note" id="metric-stage-note">Period-over-period</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Strongest channel driver</div>
+        <div class="metric-value" id="metric-channel">—</div>
+        <div class="metric-note" id="metric-channel-note">Channel comparison</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Scenario days saved</div>
+        <div class="metric-value" id="metric-scenario">—</div>
+        <div class="metric-note" id="metric-scenario-note">25% order-to-ship what-if</div>
+      </div>
+    </div>
     <h2>Agent answer</h2>
     <div id="answer">No investigation has been run yet.</div>
     <details>
@@ -200,6 +228,59 @@
   function setStatus(message, kind = "") {
     $("status").textContent = message;
     $("status").className = kind;
+  }
+
+  function formatNumber(value, digits = 2) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n.toFixed(digits) : "—";
+  }
+
+  function prettyStage(stage) {
+    const labels = {
+      order_to_ship_days: "Order → Ship",
+      ship_to_invoice_days: "Ship → Invoice",
+      invoice_to_payment_days: "Invoice → Payment"
+    };
+    return labels[stage] || stage || "—";
+  }
+
+  function updateMetricCards(payload) {
+    const trace = payload.tool_trace || [];
+    const stageCall = trace.find((item) => item.tool === "compare_stage_performance");
+    const channelCall = trace.find((item) =>
+      item.tool === "analyze_process" && item.arguments?.group_by === "channel"
+    );
+    const scenarioCall = trace.find((item) => item.tool === "simulate_stage_improvement");
+
+    if (stageCall) {
+      const result = stageCall.result || {};
+      const current = result.current_period || {};
+      const comparison = result.comparison_period || {};
+      const top = (result.deterioration_rank || [])[0] || {};
+      $("metric-cycle").textContent = formatNumber(current.observed_total_o2c_cycle_days) + " d";
+      $("metric-cycle-note").textContent =
+        "Q2: " + formatNumber(comparison.observed_total_o2c_cycle_days) + " d";
+      $("metric-stage").textContent = prettyStage(top.stage);
+      $("metric-stage-note").textContent =
+        formatNumber(top.comparison_days) + " → " + formatNumber(top.current_days) +
+        " d (+" + formatNumber(top.absolute_change_days) + ")";
+    }
+
+    if (channelCall) {
+      const rank = channelCall.result?.group_change_summary?.deterioration_rank || [];
+      const top = rank[0] || {};
+      $("metric-channel").textContent = top.dimension_value || "—";
+      $("metric-channel-note").textContent =
+        formatNumber(top.comparison_value) + " → " + formatNumber(top.current_value) +
+        " d (+" + formatNumber(top.absolute_change) + ")";
+    }
+
+    if (scenarioCall) {
+      const scenario = scenarioCall.result?.scenario || {};
+      $("metric-scenario").textContent = formatNumber(scenario.days_saved) + " d";
+      $("metric-scenario-note").textContent =
+        formatNumber(scenario.percent_improvement) + "% modeled cash-cycle improvement";
+    }
   }
 
   async function readJson(response) {
@@ -257,6 +338,7 @@
         body: JSON.stringify({ question, profile_id: profile || null })
       });
       const payload = await readJson(response);
+      updateMetricCards(payload);
       $("answer").textContent = payload.answer || "No answer returned.";
       $("trace").textContent = JSON.stringify(payload.tool_trace || [], null, 2);
       const metadata = { ...payload };
