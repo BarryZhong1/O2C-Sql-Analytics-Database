@@ -6,6 +6,7 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 from app.agent import ask_agent
+from app.config import settings
 from app.state import (
     clear_preferences,
     clear_session,
@@ -75,7 +76,7 @@ def analyst_ui() -> HTMLResponse:
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok"}
+    return {"status": "ok", "model_backend": settings.model_backend}
 
 
 @app.post("/workflow/investigate")
