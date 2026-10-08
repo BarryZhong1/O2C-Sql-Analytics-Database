@@ -96,14 +96,16 @@ cd agent
 python scripts/run_live_evals.py
 ```
 
-The report is written to `artifacts/live_eval_report.json` and retains:
+Each report retains:
 - final answer;
 - model metadata and runtime observability;
 - complete tool trace;
 - deterministic trace-evaluation result;
 - per-case errors without discarding the rest of the suite.
 
-The repository also includes a manual GitHub Actions workflow, **Agent live behavior evals**. It:
+The repository includes a free automatic workflow, **Agent mocked behavior evals**, that rebuilds Scenario V1 and executes all seven scripted orchestration cases without an API key.
+
+It also includes the optional **Agent live behavior evals** workflow. That real-model workflow:
 1. rebuilds the synthetic O2C database;
 2. applies and recalibrates Scenario V1;
 3. runs all live behavior cases;
@@ -111,7 +113,7 @@ The repository also includes a manual GitHub Actions workflow, **Agent live beha
 5. generates a Markdown evaluation summary with quality, latency, token, and tool-sequence information;
 6. uploads the resulting reports as workflow artifacts.
 
-The workflow is intentionally `workflow_dispatch` only so API-backed evaluation does not incur cost on every push. It requires the repository secret `OPENAI_API_KEY`.
+The real-model workflow requires the repository secret `OPENAI_API_KEY`; the mocked workflow does not. Mock results validate integration and deterministic tool behavior, not real-model reasoning quality. See `docs/testing_modes.md`.
 
 ## 5. Semantic / rubric evaluation
 
@@ -132,7 +134,7 @@ An optional LLM-as-Judge layer is implemented in `llm_judge.py`. It receives onl
 
 It does **not** receive hidden Scenario V1 ground truth. The judge is instructed to treat candidate content as untrusted data and to avoid outside facts. The judge response uses a strict Responses API JSON-schema output contract requiring a 0-2 score and rationale for every documented rubric dimension; the returned object is then validated and aggregated again in deterministic Python.
 
-After a live report exists:
+After a real OpenAI report exists:
 
 ```bash
 cd agent
