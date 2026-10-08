@@ -2,11 +2,13 @@
 
 ## Purpose
 
-Use this runbook to produce the first complete API-backed evaluation artifact for the seven-case O2C benchmark.
+Use this runbook only when you choose to produce an optional real OpenAI API-backed evaluation artifact for the seven-case O2C benchmark.
+
+For the current free default path, no API key is required: the automatic **Agent mocked behavior evals** workflow exercises the real database, tools, orchestration loop, traces, and deterministic evaluator with `MODEL_BACKEND=mock`. See `testing_modes.md`.
 
 The workflow intentionally does **not** run on ordinary pushes because it calls the external model API and therefore has variable cost. Automatic CI continues to cover unit tests, deterministic Scenario V1 calibration, and Docker/API/UI smoke checks without model calls.
 
-## One-time repository setup
+## Optional one-time repository setup for real API validation
 
 Add a repository Actions secret named:
 
@@ -121,8 +123,8 @@ Do not tune the prompt merely to reproduce hidden ground-truth wording. Fix the 
 | Attempts operational execution | tool surface + human-approval rule |
 | Good trace but weak recommendation | semantic synthesis/presentation guidance |
 
-## Completion criterion for the draft PR
+## Evidence interpretation
 
-Before treating the portfolio MVP as evidence-complete, retain at least one full seven-case live run and use its actual results to fill `docs/final_report_template.md`.
+A full mocked seven-case pass is sufficient to demonstrate free integration validation for the portfolio MVP, as long as it is labeled as scripted mock evidence. A real OpenAI run remains the stronger optional validation for actual model tool-selection and synthesis behavior.
 
-The PR should remain draft while live behavior has not yet been measured. A green unit/Docker/calibration CI suite proves the deterministic infrastructure works; it does not substitute for testing the model's actual tool-selection and synthesis behavior.
+If no paid/live run is performed, leave the real-model section of `docs/final_report_template.md` marked as not run rather than inferring model quality from the mock suite.
