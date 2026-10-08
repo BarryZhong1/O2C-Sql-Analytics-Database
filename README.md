@@ -8,6 +8,54 @@ A comprehensive SQL database project modeling a complete Order-to-Cash business 
 
 This project provides a complete Order-to-Cash (O2C) database system that tracks the entire customer transaction lifecycle from order placement through cash collection. It includes realistic sample data and pre-built analytical views for business intelligence.
 
+## 🤖 AI Process Improvement & Scenario Planning Agent
+
+This branch extends the SQL project into a deployable business-analysis agent with:
+
+- FastAPI analyst UI and API;
+- bounded process-analytics tools over MySQL;
+- local business-context retrieval;
+- deterministic Python what-if simulation;
+- short-term session state and bounded analyst preferences;
+- trace/evaluation infrastructure;
+- a **free scripted mock backend** for portfolio demos;
+- an optional OpenAI Responses API backend for later real-model validation.
+
+### Zero-cost portfolio demo
+
+Requirements: Docker Desktop / Docker Compose v2.
+
+```bash
+git checkout feature/process-improvement-agent
+bash agent/scripts/start_demo.sh
+```
+
+Then open:
+
+```text
+http://localhost:8000/
+```
+
+Click **Full diagnosis** → **Run investigation**.
+
+The demo runs a real four-tool workflow against the synthetic O2C database:
+
+```text
+stage comparison
+    ↓
+channel drill-down
+    ↓
+process-context retrieval
+    ↓
+scenario simulation
+    ↓
+business recommendation
+```
+
+The mock backend scripts the investigation path so the demo costs $0, but the MySQL queries, KPI values, policy retrieval, scenario calculations, FastAPI service, UI, tool trace, and deterministic evaluation are the real project components.
+
+See [Agent README](agent/README.md) and [Demo Quick Start](agent/docs/demo_quickstart.md).
+
 ### Business Process Coverage
 - **Customer Management**: Customer segmentation, credit limits, payment terms
 - **Product Catalog**: Multi-category inventory with pricing and cost tracking
