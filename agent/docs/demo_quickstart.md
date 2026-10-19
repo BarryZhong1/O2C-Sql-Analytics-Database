@@ -36,17 +36,20 @@ git pull
 From the repository root:
 
 ```bash
-bash agent/scripts/start_demo.sh
+bash agent/scripts/start_demo.sh --open
 ```
+
+The `--open` flag opens the analyst UI automatically when the stack is ready. Omit it if you prefer to open the browser manually.
 
 The launcher:
 
-1. resets the local demo containers/volumes for reproducibility;
-2. starts MySQL and the FastAPI agent;
-3. loads the base O2C dataset;
-4. applies controlled Scenario V1;
-5. waits for the API health check;
-6. prints the demo URL and active backend.
+1. checks Docker/Compose prerequisites and Docker daemon availability;
+2. resets the local demo containers/volumes for reproducibility;
+3. starts MySQL and the FastAPI agent;
+4. loads the base O2C dataset;
+5. applies controlled Scenario V1;
+6. validates `/demo/status` readiness;
+7. prints the demo URL and active backend.
 
 Open:
 
@@ -187,3 +190,8 @@ The next normal `start_demo.sh` run resets volumes anyway unless you explicitly 
 ```bash
 bash agent/scripts/start_demo.sh --keep-data
 ```
+
+
+## Presenter preparation
+
+See `demo_interview_qa.md` for concise answers about the system prompt, tool descriptions, mock-vs-real boundaries, causality, SQL guardrails, evaluation, and likely interview follow-ups.
