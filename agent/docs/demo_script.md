@@ -26,7 +26,7 @@ Explain:
 - A normal dashboard can show metrics, but an analyst still has to decide what changed, where to drill down, which process rule matters, and which scenario to test.
 - This project adds an AI investigation layer while keeping quantitative calculations in deterministic SQL/Python tools.
 
-Show the analyst UI and the read-only / scenario-planning / human-approval tags.
+Show the analyst UI and the read-only / scenario-planning / human-approval tags. For a cleaner recording, click **Presentation mode** to hide the session/profile preference controls; exit presentation mode later if you want to explain state and memory.
 
 ## 0:40-1:20 — Architecture
 
@@ -65,7 +65,7 @@ While the investigation runs, explain the hidden evaluation design without revea
 - The benchmark deliberately keeps invoice-to-payment as the longest absolute stage while another stage deteriorates more.
 - This tests whether the agent reasons from period change rather than taking a longest-stage shortcut.
 
-When the response returns, highlight:
+When the response returns, highlight the process-flow strip first: **Order → Ship** should be visually emphasized as the stage that deteriorated most. Then highlight:
 
 - the identified deteriorating stage;
 - the channel/segment drill-down;
@@ -122,7 +122,7 @@ Suggested closing:
 
 ## Demo reliability / backup path
 
-The recommended presentation already uses the local mock backend, so it does not depend on external model availability. If the local UI fails, use this fallback:
+The recommended presentation already uses the local mock backend, so it does not depend on external model availability. If the local UI fails, first try the terminal fallback with `python3 agent/scripts/run_demo_cli.py`. If the API itself is unavailable, use this evidence fallback:
 
 1. show the validated Scenario V1 benchmark;
 2. show the latest `Agent mocked behavior evals` GitHub Actions run;
@@ -147,3 +147,6 @@ Be ready to explain:
 
 
 See `docs/demo_quickstart.md` for the exact zero-cost startup commands and presenter wording.
+
+
+A validated output snapshot is available in `docs/sample_demo_output.md`, and a concise architecture/results handout is available in `docs/demo_one_pager.md`.
