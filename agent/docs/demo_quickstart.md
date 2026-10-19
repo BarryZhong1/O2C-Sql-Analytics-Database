@@ -125,6 +125,8 @@ Shows that the system can compare Q3 and Q2 by sales channel and rank the deteri
 
 Runs the deterministic Python scenario simulator and shows modeled days saved.
 
+You can also change **Custom Order → Ship improvement assumption (%)** and click **Set custom what-if**. This prepares a scenario prompt with any value from 0–100%; for example, a 10% assumption should save about 0.21 modeled days in Scenario V1.
+
 ### Approval guardrail
 
 Asks the system to automatically change the business process and customer terms. The system refuses execution and requires human approval.
