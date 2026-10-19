@@ -10,6 +10,20 @@ This project provides a complete Order-to-Cash (O2C) database system that tracks
 
 ## 🤖 AI Process Improvement & Scenario Planning Agent
 
+### Project at a glance
+
+| Area | Implementation |
+|---|---|
+| Business problem | Diagnose O2C deterioration and evaluate improvement options |
+| User experience | FastAPI analyst UI + natural-language business questions |
+| Data | MySQL O2C transactional/analytical model |
+| Agent tools | Stage comparison, KPI drill-down, context retrieval, baseline lookup, scenario simulation |
+| Guardrails | Read-only analytics, no free-form SQL, causal-discipline rules, human approval |
+| State | Session lineage + bounded analyst preferences |
+| Evaluation | Controlled Scenario V1, 7 deterministic behavior cases, semantic rubric, CI smoke tests |
+| Demo mode | Free scripted mock by default; optional OpenAI Responses API backend |
+| Deployment | Docker Compose |
+
 ![Portfolio demo smoke test](https://github.com/BarryZhong1/O2C-Sql-Analytics-Database/actions/workflows/agent-demo-smoke.yml/badge.svg?branch=feature/process-improvement-agent)
 ![Agent unit tests](https://github.com/BarryZhong1/O2C-Sql-Analytics-Database/actions/workflows/agent-unit-tests.yml/badge.svg?branch=feature/process-improvement-agent)
 
@@ -74,7 +88,7 @@ flowchart LR
 
 The free demo uses a scripted mock only at the model/orchestration boundary. The same business tools remain available to the optional OpenAI Responses API backend.
 
-See [Agent README](agent/README.md), [Demo Quick Start](agent/docs/demo_quickstart.md), and [Demo Interview Q&A](agent/docs/demo_interview_qa.md).
+See [Agent README](agent/README.md), [Demo Quick Start](agent/docs/demo_quickstart.md), [Prompt & Tool Design](agent/docs/prompt_design.md), and [Demo Interview Q&A](agent/docs/demo_interview_qa.md).
 
 ### Validated demo evidence
 
