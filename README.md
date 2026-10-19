@@ -27,7 +27,7 @@ Requirements: Docker Desktop / Docker Compose v2.
 
 ```bash
 git checkout feature/process-improvement-agent
-bash agent/scripts/start_demo.sh
+bash agent/scripts/start_demo.sh --open
 ```
 
 Then open:
@@ -54,7 +54,7 @@ business recommendation
 
 The mock backend scripts the investigation path so the demo costs $0, but the MySQL queries, KPI values, policy retrieval, scenario calculations, FastAPI service, UI, tool trace, and deterministic evaluation are the real project components.
 
-See [Agent README](agent/README.md) and [Demo Quick Start](agent/docs/demo_quickstart.md).
+See [Agent README](agent/README.md), [Demo Quick Start](agent/docs/demo_quickstart.md), and [Demo Interview Q&A](agent/docs/demo_interview_qa.md).
 
 ### Business Process Coverage
 - **Customer Management**: Customer segmentation, credit limits, payment terms
