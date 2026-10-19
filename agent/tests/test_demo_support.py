@@ -1,3 +1,4 @@
+from app.agent import TOOLS
 from app.main import demo_design
 from scripts.build_demo_report import build_report
 
@@ -95,3 +96,35 @@ def test_build_demo_report_includes_evidence_and_versions():
     assert "Modeled days saved: **0.52 days**" in report
     assert "System prompt: **prompt123456**" in report
     assert "scripted mock mode" in report
+
+
+def test_tool_surface_is_bounded_and_read_only():
+    names = {tool["name"] for tool in TOOLS}
+    assert names == {
+        "analyze_process",
+        "compare_stage_performance",
+        "get_stage_baseline",
+        "simulate_stage_improvement",
+        "retrieve_policy",
+    }
+
+    forbidden_name_fragments = {
+        "write",
+        "update",
+        "delete",
+        "insert",
+        "execute_sql",
+        "send",
+        "approve",
+    }
+    for name in names:
+        lowered = name.lower()
+        assert not any(fragment in lowered for fragment in forbidden_name_fragments)
+
+    analyze = next(tool for tool in TOOLS if tool["name"] == "analyze_process")
+    properties = analyze["parameters"]["properties"]
+    assert "sql" not in properties
+    assert "query" not in properties
+    assert set(properties["group_by"]["enum"]) == {"segment", "channel", None}
+    assert "order_to_ship_days" in properties["metric"]["enum"]
+    assert analyze["parameters"]["additionalProperties"] is False
