@@ -63,6 +63,12 @@
     #status { min-height: 20px; margin-top: 10px; font-size: 13px; color: var(--muted); }
     #status.good { color: var(--good); }
     #status.bad { color: var(--bad); }
+    .process-flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 0 0 14px; }
+    .process-stage { position: relative; background: #0f172a; border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+    .process-stage.active { border-color: #f59e0b; box-shadow: 0 0 0 1px rgba(245, 158, 11, .25); }
+    .process-stage .stage-title { font-weight: 800; }
+    .process-stage .stage-change { margin-top: 4px; font-size: 12px; color: var(--muted); }
+    .process-stage.active .stage-change { color: #fbbf24; }
     .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
     .metric-card { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
     .metric-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
@@ -118,7 +124,7 @@
     .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
     .actions button { width: auto; margin-top: 0; padding: 8px 12px; font-size: 12px; }
     .secondary { background: #1e293b; border-color: #475569; }
-    @media (max-width: 800px) { .grid, .row, .presets, .metric-grid, .readiness, .evidence-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 800px) { .grid, .row, .presets, .metric-grid, .readiness, .evidence-grid, .process-flow { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -201,6 +207,11 @@
 
   <section class="card" style="margin-top:18px">
     <h2>Investigation result</h2>
+    <div class="process-flow" id="process-flow">
+      <div class="process-stage" data-stage="order_to_ship_days"><div class="stage-title">Order → Ship</div><div class="stage-change">Awaiting analysis</div></div>
+      <div class="process-stage" data-stage="ship_to_invoice_days"><div class="stage-title">Ship → Invoice</div><div class="stage-change">Awaiting analysis</div></div>
+      <div class="process-stage" data-stage="invoice_to_payment_days"><div class="stage-title">Invoice → Payment</div><div class="stage-change">Awaiting analysis</div></div>
+    </div>
     <div class="metric-grid">
       <div class="metric-card">
         <div class="metric-label">Q3 O2C cycle</div>
@@ -305,6 +316,27 @@
       invoice_to_payment_days: "Invoice → Payment"
     };
     return labels[stage] || stage || "—";
+  }
+
+  function updateProcessFlow(payload) {
+    const trace = payload.tool_trace || [];
+    const stageCall = trace.find((item) => item.tool === "compare_stage_performance");
+    if (!stageCall) return;
+    const rows = stageCall.result && stageCall.result.deterioration_rank || [];
+    const topStage = rows.length ? rows[0].stage : null;
+    document.querySelectorAll(".process-stage").forEach((node) => {
+      const stage = node.dataset.stage;
+      const row = rows.find((item) => item.stage === stage);
+      node.classList.toggle("active", stage === topStage);
+      const change = node.querySelector(".stage-change");
+      if (!row) {
+        change.textContent = "No data";
+        return;
+      }
+      const delta = Number(row.absolute_change_days);
+      const prefix = delta > 0 ? "+" : "";
+      change.textContent = formatNumber(row.comparison_days) + " → " + formatNumber(row.current_days) + " d (" + prefix + formatNumber(delta) + ")";
+    });
   }
 
   function updateMetricCards(payload) {
@@ -617,6 +649,7 @@
         body: JSON.stringify({ question, profile_id: profile || null })
       });
       const payload = await readJson(response);
+      updateProcessFlow(payload);
       updateMetricCards(payload);
       updateEvidenceTables(payload);
       updateToolPath(payload);
