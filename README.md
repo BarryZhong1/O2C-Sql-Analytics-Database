@@ -247,17 +247,26 @@ LIMIT 10;
 ## 🛠️ Project Structure
 
 ```
-o2c-analytics-project/
+O2C-Sql-Analytics-Database/
+├── agent/
+│   ├── app/               # FastAPI service, agent loop, UI, tools, state
+│   ├── data/              # Controlled Scenario V1 overlay
+│   ├── docs/              # BA, architecture, demo, evaluation artifacts
+│   ├── evals/             # Behavior cases and semantic rubric
+│   ├── policies/          # Local business-context documents
+│   ├── scripts/           # Demo/evaluation/report automation
+│   └── tests/             # Agent unit tests
 ├── sql/
 │   ├── 01-setup/          # Database and table creation
 │   ├── 02-data/           # Data loading and generation
 │   ├── 03-views/          # Business intelligence views
 │   ├── 04-reports/        # Sample analytical queries
 │   └── complete_setup.sql # One-click complete setup
-├── docs/                  # Detailed documentation
-├── tests/                 # Data validation queries
-├── examples/              # Sample dashboard queries
-└── scripts/               # Automation scripts
+├── docs/                  # Original database documentation
+├── examples/              # Sample analytics queries
+├── docker-compose.yml     # MySQL + agent local stack
+├── Makefile               # Demo/test shortcuts
+└── README.md
 ```
 
 ## 💼 Use Cases
