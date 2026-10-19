@@ -226,6 +226,7 @@
       <div class="actions">
         <button id="reset-session" class="secondary" type="button">Reset session</button>
         <button id="download-report" class="secondary" type="button" disabled>Download Markdown report</button>
+        <button id="download-json" class="secondary" type="button" disabled>Download raw JSON</button>
       </div>
       <div id="status"></div>
     </section>
@@ -706,6 +707,22 @@
     URL.revokeObjectURL(url);
   }
 
+  function downloadRawJson() {
+    if (!latestPayload) return;
+    const blob = new Blob(
+      [JSON.stringify(latestPayload, null, 2)],
+      { type: "application/json;charset=utf-8" }
+    );
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "o2c-agent-response.json";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }
+
   async function readJson(response) {
     const text = await response.text();
     let payload;
@@ -723,6 +740,7 @@
     $("presentation-toggle").textContent = enabled ? "Exit presentation mode" : "Presentation mode";
   });
   $("download-report").addEventListener("click", downloadReport);
+  $("download-json").addEventListener("click", downloadRawJson);
 
   $("reset-session").addEventListener("click", async () => {
     const session = $("session").value.trim();
@@ -787,6 +805,7 @@
       latestPayload = payload;
       latestQuestion = question;
       $("download-report").disabled = false;
+      $("download-json").disabled = false;
       $("answer").innerHTML = renderAnswer(payload.answer || "No answer returned.");
       $("trace").textContent = JSON.stringify(payload.tool_trace || [], null, 2);
       const metadata = { ...payload };
