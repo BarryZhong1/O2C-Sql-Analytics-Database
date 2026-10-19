@@ -25,7 +25,7 @@ UI_PATH = Path(__file__).with_name("static") / "index.html"
 
 app = FastAPI(
     title="O2C Process Improvement & Scenario Planning Agent",
-    version="0.4.0",
+    version="0.5.0",
 )
 
 
