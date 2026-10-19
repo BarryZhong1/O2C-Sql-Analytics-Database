@@ -21,7 +21,7 @@ Key instruction themes:
 - normalize collections analysis against contractual due dates when appropriate;
 - use deterministic Python for what-if calculations;
 - do not execute operational changes;
-- end with findings, evidence, scenario impact, risks/unknowns, and next action.
+- end with findings, evidence, scenario impact, risks/unknowns, and next action; for process changes, include pilot scope, success metrics, dependencies, and a human decision gate.
 
 ## What does a user prompt look like?
 
