@@ -45,6 +45,8 @@ jobs:
           grep -q "Demo status" /tmp/demo-index.html
           grep -q "Download Markdown report" /tmp/demo-index.html
           grep -q "Investigation path" /tmp/demo-index.html
+          python -c 'import re; s=open("/tmp/demo-index.html").read(); m=re.search(r"<script>(.*)</script>", s, re.S); assert m; open("/tmp/demo-ui.js","w").write(m.group(1))'
+          node --check /tmp/demo-ui.js
 
       - name: Run and verify the main portfolio demo
         run: |
