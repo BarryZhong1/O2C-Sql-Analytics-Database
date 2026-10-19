@@ -423,6 +423,11 @@
 
   function buildMarkdownReport(payload, question) {
     const trace = payload.tool_trace || [];
+    const stageCall = trace.find((item) => item.tool === "compare_stage_performance");
+    const channelCall = trace.find((item) => item.tool === "analyze_process" && item.arguments && item.arguments.group_by === "channel");
+    const policyCall = trace.find((item) => item.tool === "retrieve_policy");
+    const scenarioCall = trace.find((item) => item.tool === "simulate_stage_improvement");
+
     const lines = [
       "# O2C Process Improvement Investigation",
       "",
@@ -431,18 +436,96 @@
       "",
       "## Business question",
       "",
-      question,
+      question
+    ];
+
+    if (stageCall) {
+      const current = stageCall.result && stageCall.result.current_period || {};
+      const comparison = stageCall.result && stageCall.result.comparison_period || {};
+      const rows = stageCall.result && stageCall.result.deterioration_rank || [];
+      lines.push(
+        "",
+        "## KPI summary",
+        "",
+        "- Q2 total O2C cycle: **" + formatNumber(comparison.observed_total_o2c_cycle_days) + " days**",
+        "- Q3 total O2C cycle: **" + formatNumber(current.observed_total_o2c_cycle_days) + " days**",
+        "",
+        "### Stage comparison",
+        "",
+        "| Stage | Q2 | Q3 | Change |",
+        "|---|---:|---:|---:|"
+      );
+      rows.forEach((row) => {
+        const change = Number(row.absolute_change_days);
+        lines.push(
+          "| " + prettyStage(row.stage) +
+          " | " + formatNumber(row.comparison_days) +
+          " | " + formatNumber(row.current_days) +
+          " | " + (change > 0 ? "+" : "") + formatNumber(change) + " |"
+        );
+      });
+    }
+
+    if (channelCall) {
+      const rows = channelCall.result && channelCall.result.group_change_summary &&
+        channelCall.result.group_change_summary.deterioration_rank || [];
+      lines.push(
+        "",
+        "### Channel comparison",
+        "",
+        "| Channel | Q2 | Q3 | Change |",
+        "|---|---:|---:|---:|"
+      );
+      rows.forEach((row) => {
+        const change = Number(row.absolute_change);
+        lines.push(
+          "| " + (row.dimension_value || "—") +
+          " | " + formatNumber(row.comparison_value) +
+          " | " + formatNumber(row.current_value) +
+          " | " + (change > 0 ? "+" : "") + formatNumber(change) + " |"
+        );
+      });
+    }
+
+    if (policyCall) {
+      const matches = policyCall.result && policyCall.result.matches || [];
+      if (matches.length) {
+        lines.push("", "## Retrieved business context", "");
+        matches.slice(0, 3).forEach((match) => {
+          lines.push("- **" + (match.source || "context") + "**: " + String(match.paragraph || "").replace(/\n/g, " "));
+        });
+      }
+    }
+
+    if (scenarioCall) {
+      const baseline = scenarioCall.result && scenarioCall.result.baseline || {};
+      const scenario = scenarioCall.result && scenarioCall.result.scenario || {};
+      lines.push(
+        "",
+        "## What-if scenario",
+        "",
+        "- Modeled baseline cash cycle: **" + formatNumber(baseline.modeled_cash_cycle_days) + " days**",
+        "- Modeled scenario cash cycle: **" + formatNumber(scenario.modeled_cash_cycle_days) + " days**",
+        "- Modeled days saved: **" + formatNumber(scenario.days_saved) + " days**",
+        "- Modeled improvement: **" + formatNumber(scenario.percent_improvement) + "%**",
+        "",
+        "The scenario is assumption-based and is not a guaranteed intervention effect."
+      );
+    }
+
+    lines.push(
       "",
-      "## Findings",
+      "## Findings and recommendation",
       "",
       payload.answer || "No answer returned.",
       "",
       "## Tool path",
       ""
-    ];
+    );
     trace.forEach((item, index) => {
       lines.push((index + 1) + ". **" + toolLabel(item.tool) + "** — " + toolNote(item));
     });
+
     lines.push("", "## Evidence note", "");
     lines.push(payload.backend === "mock"
       ? "This report was generated in scripted mock mode. The SQL, retrieval, and scenario results are real project outputs, while the model-side investigation path is scripted."
