@@ -1,4 +1,6 @@
 from pathlib import Path
+import hashlib
+import json
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException
@@ -6,7 +8,7 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy import text
 from pydantic import BaseModel, Field
 
-from app.agent import ask_agent
+from app.agent import SYSTEM_PROMPT, TOOLS, ask_agent
 from app.config import settings
 from app.db import engine
 from app.state import (
@@ -80,6 +82,64 @@ def analyst_ui() -> HTMLResponse:
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok", "model_backend": settings.model_backend}
+
+
+@app.get("/demo/design")
+def demo_design() -> dict:
+    """Expose the bounded agent design used by the running application."""
+    rules = []
+    for line in SYSTEM_PROMPT.splitlines():
+        stripped = line.strip()
+        if stripped and stripped[0].isdigit() and ". " in stripped:
+            rules.append(stripped.split(". ", 1)[1])
+
+    tool_catalog = [
+        {
+            "name": tool["name"],
+            "description": tool["description"],
+            "strict": bool(tool.get("strict")),
+            "required_parameters": list(
+                (tool.get("parameters") or {}).get("required", [])
+            ),
+        }
+        for tool in TOOLS
+    ]
+
+    prompt_hash = hashlib.sha256(SYSTEM_PROMPT.encode("utf-8")).hexdigest()[:12]
+    tools_hash = hashlib.sha256(
+        json.dumps(TOOLS, sort_keys=True).encode("utf-8")
+    ).hexdigest()[:12]
+
+    return {
+        "backend": settings.model_backend,
+        "role": (
+            "AI business process improvement analyst focused on the "
+            "Order-to-Cash process"
+        ),
+        "system_prompt_version": prompt_hash,
+        "tool_catalog_version": tools_hash,
+        "instruction_rules": rules,
+        "tools": tool_catalog,
+        "boundaries": {
+            "database_access": (
+                "Approved parameterized analytics tools only; no free-form "
+                "model-generated SQL is executed."
+            ),
+            "scenario_math": (
+                "Numerical what-if calculations are handled by deterministic "
+                "Python tools."
+            ),
+            "causality": (
+                "Descriptive patterns and change logs may support hypotheses "
+                "but do not establish causality."
+            ),
+            "execution": (
+                "The agent has no operational write tools; implementation "
+                "requires human approval."
+            ),
+        },
+        "full_system_prompt": SYSTEM_PROMPT,
+    }
 
 
 @app.get("/demo/status")
