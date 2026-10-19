@@ -88,7 +88,21 @@ That panel is loaded from the running application rather than a manually copied 
 
 The **API docs** shortcut opens FastAPI's generated OpenAPI documentation in a separate tab.
 
-## 5. Run the main portfolio demo
+## 5. Optional: compare Workflow v1 with Agent v1
+
+Click **Run Workflow v1 baseline** if you want to show the course progression from a deterministic workflow to agentic orchestration.
+
+Workflow v1 uses a fixed sequence:
+
+```text
+total-cycle comparison
+→ stage comparison
+→ illustrative 20% scenario
+```
+
+It can identify the deteriorating stage, but it intentionally does **not** decide which business dimension to drill into or retrieve process context. That limitation is the reason Agent v1 exists.
+
+## 6. Run the main portfolio demo
 
 Click **Full diagnosis** and then **Run investigation**.
 
@@ -121,7 +135,7 @@ Expand **Inspect tool trace** to show the underlying SQL/tool results used by th
 
 After the run, click **Download Markdown report** to export the business question, KPI/stage/channel evidence tables, scenario results, answer, tool path, evidence-mode disclosure, and governance note as a portable demo artifact. Use **Download raw JSON** when you want the complete machine-readable response and tool trace for technical review.
 
-## 6. Use the other demo presets
+## 7. Use the other demo presets
 
 ### Channel drill-down
 
@@ -143,7 +157,7 @@ Use the same stateful session after **Full diagnosis** and click **Causality fol
 
 The **Reset session** button clears the current demo session so you can repeat the presentation from a clean state.
 
-## 7. What to say during the demo
+## 8. What to say during the demo
 
 A concise explanation:
 
@@ -161,7 +175,7 @@ When showing the scenario:
 
 > The 25% improvement is a transparent what-if assumption calculated in Python. It is not presented as a guaranteed operational effect.
 
-## 8. Important honesty boundary
+## 9. Important honesty boundary
 
 The mock demo **does demonstrate**:
 
@@ -180,7 +194,7 @@ It **does not demonstrate** that a real LLM independently discovered the tool pa
 
 If asked, say exactly that. The project preserves an optional `MODEL_BACKEND=openai` mode for later real-model validation.
 
-## 9. Optional OpenAI mode later
+## 10. Optional OpenAI mode later
 
 After configuring an API key:
 
@@ -193,7 +207,7 @@ bash agent/scripts/start_demo.sh
 
 The UI and business tools remain the same; only the model/orchestration backend changes.
 
-## 10. Stop/reset
+## 11. Stop/reset
 
 Stop containers but keep volumes:
 
