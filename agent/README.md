@@ -258,8 +258,23 @@ Mock outputs are labeled and must not be reported as real-model performance. See
 
 ## Demo and final report
 
-- `docs/demo_script.md` provides a five-minute portfolio walkthrough plus a backup path if the external model API is unavailable during a presentation.
-- `docs/final_report_template.md` is intentionally result-gated: measured live pass rates are added only after the full seven-case evaluation has actually run.
+Run the zero-cost portfolio demo from the repository root:
+
+```bash
+bash agent/scripts/start_demo.sh --open
+```
+
+The UI includes readiness checks, a visual O2C process flow, KPI cards, Q2/Q3 evidence tables, a tool-path view, stateful follow-up, presentation mode, and Markdown report export. A terminal fallback is also available through `scripts/run_demo_cli.py`.
+
+Presentation/evidence docs:
+
+- `docs/demo_quickstart.md` — exact local setup and click path;
+- `docs/demo_script.md` — five-minute narration;
+- `docs/demo_interview_qa.md` — prompt/tool/guardrail interview answers;
+- `docs/demo_one_pager.md` — architecture and validated findings;
+- `docs/sample_demo_output.md` — reference output snapshot;
+- `docs/mock_evaluation_report.md` — version-controlled seven-case mock integration evidence;
+- `docs/final_report_template.md` — optional future real-model result section.
 
 ## CI / deployment validation
 
@@ -270,7 +285,7 @@ The branch includes separate workflows for:
 - Docker/Compose build and API/UI smoke testing;
 - manually triggered API-backed live behavior evaluation.
 
-The automatic Docker smoke test does **not** call the model API.
+The automatic Docker smoke test does **not** call the model API. A dedicated portfolio demo smoke test also launches the documented one-command demo, validates `/demo/status`, syntax-checks the inline UI JavaScript, runs the main four-tool investigation, exercises the terminal fallback, and verifies a stateful causal follow-up.
 
 ## Roadmap status
 
