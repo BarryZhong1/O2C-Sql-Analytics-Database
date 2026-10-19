@@ -124,6 +124,10 @@
     .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
     .actions button { width: auto; margin-top: 0; padding: 8px 12px; font-size: 12px; }
     .secondary { background: #1e293b; border-color: #475569; }
+    .top-actions { display: flex; justify-content: flex-end; margin: 8px 0 2px; }
+    .top-actions button { width: auto; margin: 0; padding: 7px 11px; font-size: 12px; }
+    body.presentation .technical { display: none !important; }
+    body.presentation .grid { grid-template-columns: 1fr; }
     @media (max-width: 800px) { .grid, .row, .presets, .metric-grid, .readiness, .evidence-grid, .process-flow { grid-template-columns: 1fr; } }
   </style>
 </head>
@@ -133,6 +137,7 @@
   <span class="tag">Scenario planning</span>
   <span class="tag">Human approval</span>
   <span class="tag">Mock/OpenAI backend</span>
+  <div class="top-actions"><button id="presentation-toggle" class="secondary" type="button">Presentation mode</button></div>
   <h1>O2C Process Improvement Agent</h1>
   <p>Investigate process deterioration, drill into business drivers, retrieve operating context, and test transparent what-if scenarios.</p>
   <div id="backend-banner" class="backend-banner">Checking active model backend...</div>
@@ -160,7 +165,7 @@
         <button class="preset" data-prompt="causal">Causality follow-up</button>
       </div>
 
-      <div class="row">
+      <div class="row technical">
         <div>
           <label for="session">Session ID</label>
           <input id="session" value="demo-1" placeholder="optional" />
@@ -171,7 +176,7 @@
         </div>
       </div>
 
-      <label class="check"><input id="use-session" type="checkbox" checked /> Continue a stateful investigation session</label>
+      <label class="check technical"><input id="use-session" type="checkbox" checked /> Continue a stateful investigation session</label>
       <button id="run">Run investigation</button>
       <div class="actions">
         <button id="reset-session" class="secondary" type="button">Reset session</button>
@@ -180,7 +185,7 @@
       <div id="status"></div>
     </section>
 
-    <aside class="card">
+    <aside class="card technical">
       <h2>Reporting preferences</h2>
       <p>Preferences affect presentation and default drill-down style only. They cannot override evidence or approval boundaries.</p>
       <label for="detail">Detail level</label>
@@ -252,7 +257,7 @@
       <summary>Inspect tool trace</summary>
       <pre id="trace">[]</pre>
     </details>
-    <details>
+    <details class="technical">
       <summary>Inspect response metadata</summary>
       <pre id="meta">{}</pre>
     </details>
@@ -591,6 +596,10 @@
 
   loadBackendStatus();
 
+  $("presentation-toggle").addEventListener("click", () => {
+    const enabled = document.body.classList.toggle("presentation");
+    $("presentation-toggle").textContent = enabled ? "Exit presentation mode" : "Presentation mode";
+  });
   $("download-report").addEventListener("click", downloadReport);
 
   $("reset-session").addEventListener("click", async () => {
