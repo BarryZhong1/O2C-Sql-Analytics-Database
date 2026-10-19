@@ -99,7 +99,7 @@ The UI now also renders the investigation as a four-step visual path so a review
 
 Expand **Inspect tool trace** to show the underlying SQL/tool results used by the demo.
 
-After the run, click **Download Markdown report** to export the business question, answer, tool path, evidence-mode disclosure, and governance note as a portable demo artifact.
+After the run, click **Download Markdown report** to export the business question, KPI/stage/channel evidence tables, scenario results, answer, tool path, evidence-mode disclosure, and governance note as a portable demo artifact.
 
 ## 5. Use the other demo presets
 
@@ -195,3 +195,23 @@ bash agent/scripts/start_demo.sh --keep-data
 ## Presenter preparation
 
 See `demo_interview_qa.md` for concise answers about the system prompt, tool descriptions, mock-vs-real boundaries, causality, SQL guardrails, evaluation, and likely interview follow-ups.
+
+
+## Terminal fallback
+
+If you prefer to demonstrate the project without a browser, keep the Docker demo running and execute:
+
+```bash
+python3 agent/scripts/run_demo_cli.py
+```
+
+The CLI submits the same main business question through the FastAPI endpoint, prints the tool path and recommendation, and can save the raw response:
+
+```bash
+python3 agent/scripts/run_demo_cli.py \
+  --output agent/artifacts/local_demo_response.json
+```
+
+## Reference output
+
+See `sample_demo_output.md` for a validated reference snapshot of the expected Scenario V1 findings and numbers.
