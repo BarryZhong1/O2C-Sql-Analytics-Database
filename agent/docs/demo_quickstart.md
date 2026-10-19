@@ -33,7 +33,13 @@ git pull
 
 ## 3. Start a clean demo
 
-From the repository root:
+From the repository root, the shortest command is:
+
+```bash
+make demo-open
+```
+
+Equivalent direct command:
 
 ```bash
 bash agent/scripts/start_demo.sh --open
@@ -231,3 +237,14 @@ python3 agent/scripts/run_demo_cli.py \
 ## Reference output
 
 See `sample_demo_output.md` for a validated reference snapshot of the expected Scenario V1 findings and numbers.
+
+
+## Convenience commands
+
+From the repository root:
+
+```bash
+make help
+```
+
+Useful shortcuts include `make demo`, `make demo-open`, `make demo-cli`, `make demo-stop`, `make demo-reset`, `make agent-test`, and `make compose-check`.
