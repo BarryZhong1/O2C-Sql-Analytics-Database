@@ -256,6 +256,10 @@ GitHub Actions now has two evidence paths:
 
 Mock outputs are labeled and must not be reported as real-model performance. See `docs/testing_modes.md` and `evals/README.md`.
 
+## Documentation map
+
+Use `docs/README.md` as the reviewer-oriented index for business analysis, architecture, evaluation, and demo materials.
+
 ## Demo and final report
 
 Run the zero-cost portfolio demo from the repository root:
