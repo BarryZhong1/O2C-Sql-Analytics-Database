@@ -74,19 +74,39 @@ class ScriptedMockResponses:
 
     @staticmethod
     def _is_showcase_question(question: str) -> bool:
+        """
+        Recognize common paraphrases of the main portfolio investigation.
+
+        This remains a deterministic mock router, not natural-language reasoning.
+        The broader matching simply makes the zero-cost demo less brittle if a
+        presenter rephrases the documented prompt.
+        """
         q = question.lower()
-        return (
-            "q3 2024" in q
-            and "q2 2024" in q
-            and (
-                "investigate why o2c cycle time worsened" in q
-                or (
-                    "stage that deteriorated most" in q
-                    and ("driver" in q or "drill" in q)
-                    and "scenario" in q
-                )
+        has_periods = "q3 2024" in q and "q2 2024" in q
+        has_o2c = "o2c" in q or "order-to-cash" in q or "order to cash" in q
+        has_problem = any(
+            token in q
+            for token in (
+                "worsen",
+                "slower",
+                "slowdown",
+                "deterior",
+                "performance got worse",
+                "what changed",
             )
         )
+        has_investigation = any(
+            token in q
+            for token in (
+                "investigate",
+                "why",
+                "driver",
+                "drill",
+                "root cause",
+                "what happened",
+            )
+        )
+        return has_periods and has_o2c and has_problem and has_investigation
 
     @staticmethod
     def _tool_results(items: list[dict[str, Any]], state: dict[str, Any]) -> dict[str, Any]:
