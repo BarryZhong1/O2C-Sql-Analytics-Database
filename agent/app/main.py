@@ -24,10 +24,11 @@ from app.workflow import investigate_cycle_time
 
 
 UI_PATH = Path(__file__).with_name("static") / "index.html"
+APP_VERSION = "0.5.0"
 
 app = FastAPI(
     title="O2C Process Improvement & Scenario Planning Agent",
-    version="0.5.0",
+    version=APP_VERSION,
 )
 
 
@@ -81,7 +82,11 @@ def analyst_ui() -> HTMLResponse:
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok", "model_backend": settings.model_backend}
+    return {
+        "status": "ok",
+        "model_backend": settings.model_backend,
+        "app_version": APP_VERSION,
+    }
 
 
 @app.get("/demo/design")
@@ -119,6 +124,7 @@ def demo_design() -> dict:
 
     return {
         "backend": settings.model_backend,
+        "app_version": APP_VERSION,
         "role": (
             "AI business process improvement analyst focused on the "
             "Order-to-Cash process"
@@ -195,6 +201,7 @@ def demo_status() -> dict:
         return {
             "ready": bool(order_count and scenario_row),
             "model_backend": settings.model_backend,
+            "app_version": APP_VERSION,
             "database": {
                 "connected": True,
                 "order_count": order_count,
@@ -223,6 +230,7 @@ def demo_status() -> dict:
         return {
             "ready": False,
             "model_backend": settings.model_backend,
+            "app_version": APP_VERSION,
             "database": {"connected": False, "order_count": 0},
             "scenario": {"applied": False, "scenario_id": None, "applied_at": None},
             "benchmark": {},
