@@ -10,6 +10,9 @@ This project provides a complete Order-to-Cash (O2C) database system that tracks
 
 ## 🤖 AI Process Improvement & Scenario Planning Agent
 
+![Portfolio demo smoke test](https://github.com/BarryZhong1/O2C-Sql-Analytics-Database/actions/workflows/agent-demo-smoke.yml/badge.svg?branch=feature/process-improvement-agent)
+![Agent unit tests](https://github.com/BarryZhong1/O2C-Sql-Analytics-Database/actions/workflows/agent-unit-tests.yml/badge.svg?branch=feature/process-improvement-agent)
+
 This branch extends the SQL project into a deployable business-analysis agent with:
 
 - FastAPI analyst UI and API;
@@ -53,6 +56,23 @@ business recommendation
 ```
 
 The mock backend scripts the investigation path so the demo costs $0, but the MySQL queries, KPI values, policy retrieval, scenario calculations, FastAPI service, UI, tool trace, and deterministic evaluation are the real project components.
+
+### Agent architecture
+
+```mermaid
+flowchart LR
+    U[Business user] --> UI[FastAPI analyst UI]
+    UI --> M[Model / orchestration boundary]
+    M --> A[Process analytics<br/>MySQL]
+    M --> R[Business context<br/>local retrieval]
+    M --> S[Scenario simulator<br/>Python]
+    A --> D[Evidence-backed recommendation]
+    R --> D
+    S --> D
+    D --> H[Human approval]
+```
+
+The free demo uses a scripted mock only at the model/orchestration boundary. The same business tools remain available to the optional OpenAI Responses API backend.
 
 See [Agent README](agent/README.md), [Demo Quick Start](agent/docs/demo_quickstart.md), and [Demo Interview Q&A](agent/docs/demo_interview_qa.md).
 
