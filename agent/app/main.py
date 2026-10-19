@@ -3,10 +3,12 @@ from typing import Literal
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
+from sqlalchemy import text
 from pydantic import BaseModel, Field
 
 from app.agent import ask_agent
 from app.config import settings
+from app.db import engine
 from app.state import (
     clear_preferences,
     clear_session,
@@ -15,6 +17,7 @@ from app.state import (
     set_preferences,
     upsert_session,
 )
+from app.tools.process_analytics import analyze_process, compare_stage_performance
 from app.workflow import investigate_cycle_time
 
 
@@ -77,6 +80,87 @@ def analyst_ui() -> HTMLResponse:
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok", "model_backend": settings.model_backend}
+
+
+@app.get("/demo/status")
+def demo_status() -> dict:
+    """
+    Return presentation-readiness information without exposing hidden eval ground truth.
+
+    This endpoint is intentionally read-only and uses the same analytical layer as
+    the demo. It helps a presenter verify that the database and Scenario V1 are
+    loaded before starting the investigation.
+    """
+    try:
+        with engine.connect() as conn:
+            order_count = int(conn.execute(text("SELECT COUNT(*) FROM orders")).scalar() or 0)
+            scenario_row = conn.execute(
+                text(
+                    """
+                    SELECT scenario_id, applied_at, primary_order_count, secondary_invoice_count
+                    FROM agent_scenario_registry
+                    WHERE scenario_id = 'scenario_v1_marketplace_bottleneck'
+                    """
+                )
+            ).mappings().first()
+
+        stages = compare_stage_performance(
+            start_date="2024-07-01",
+            end_date="2024-09-30",
+            compare_start_date="2024-04-01",
+            compare_end_date="2024-06-30",
+        )
+        channels = analyze_process(
+            metric="order_to_ship_days",
+            start_date="2024-07-01",
+            end_date="2024-09-30",
+            group_by="channel",
+            compare_start_date="2024-04-01",
+            compare_end_date="2024-06-30",
+        )
+
+        top_stage = (stages.get("deterioration_rank") or [{}])[0]
+        top_channel = (
+            (channels.get("group_change_summary") or {}).get("deterioration_rank")
+            or [{}]
+        )[0]
+
+        return {
+            "ready": bool(order_count and scenario_row),
+            "model_backend": settings.model_backend,
+            "database": {
+                "connected": True,
+                "order_count": order_count,
+            },
+            "scenario": {
+                "applied": scenario_row is not None,
+                "scenario_id": scenario_row["scenario_id"] if scenario_row else None,
+                "applied_at": (
+                    scenario_row["applied_at"].isoformat()
+                    if scenario_row and scenario_row.get("applied_at")
+                    else None
+                ),
+            },
+            "benchmark": {
+                "q2_total_o2c_days": (stages.get("comparison_period") or {}).get(
+                    "observed_total_o2c_cycle_days"
+                ),
+                "q3_total_o2c_days": (stages.get("current_period") or {}).get(
+                    "observed_total_o2c_cycle_days"
+                ),
+                "largest_stage_deterioration": top_stage.get("stage"),
+                "strongest_channel_deterioration": top_channel.get("dimension_value"),
+            },
+        }
+    except Exception as exc:
+        return {
+            "ready": False,
+            "model_backend": settings.model_backend,
+            "database": {"connected": False, "order_count": 0},
+            "scenario": {"applied": False, "scenario_id": None, "applied_at": None},
+            "benchmark": {},
+            "error": str(exc),
+        }
 
 
 @app.post("/workflow/investigate")
