@@ -414,6 +414,53 @@ This free mock mode proves the application flow and uses real database/tool resu
             "to test open-ended model behavior."
         )
 
+    def _stateful_followup_answer(
+        self,
+        question: str,
+        parent_state: dict[str, Any],
+    ) -> str | None:
+        q = question.lower()
+        if not parent_state:
+            return None
+
+        if (
+            ("what evidence" in q or "before claiming" in q)
+            and ("caus" in q or "caused" in q)
+        ):
+            results = parent_state.get("results", {})
+            stages = results.get("compare_stage_performance", {})
+            channel = results.get("analyze_process", {})
+            policy = results.get("retrieve_policy", {})
+
+            top_stage = (stages.get("deterioration_rank") or [{}])[0]
+            top_channel = (
+                (channel.get("group_change_summary") or {}).get(
+                    "deterioration_rank"
+                )
+                or [{}]
+            )[0]
+            matches = policy.get("matches") or []
+            context = matches[0] if matches else {}
+            context_text = " ".join(
+                str(context.get("paragraph", "the retrieved process change")).split()
+            )
+
+            return (
+                "[MOCK BACKEND — stateful follow-up] The prior investigation found "
+                f"{self._stage_label(top_stage.get('stage'))} deteriorated most and "
+                f"{top_channel.get('dimension_value', 'the leading channel')} had the "
+                "largest channel-level increase. It also retrieved this context: "
+                f"{context_text[:220]}. "
+                "That is enough to form a hypothesis, but not to claim causality. "
+                "Before making a causal claim, compare affected and unaffected orders "
+                "over the same period, inspect review-queue timestamps and exception/rework "
+                "records, control for concurrent channel-mix or staffing changes, and "
+                "preferably run a bounded pilot or quasi-experimental comparison. "
+                "Timing alone is not proof."
+            )
+
+        return None
+
     def _next_showcase_call(
         self,
         tools_run: list[str],
@@ -523,6 +570,25 @@ This free mock mode proves the application flow and uses real database/tool resu
             )
 
         question = self._question_from_input(items)
+        parent_state = self._state.get(previous_id or "", {})
+        stateful_answer = self._stateful_followup_answer(question, parent_state)
+        if stateful_answer is not None:
+            response_id = self._new_id()
+            self._state[response_id] = {
+                "question": question,
+                "phase": 0,
+                "tools_run": [],
+                "pending_calls": {},
+                "results": dict(parent_state.get("results", {})),
+                "parent_response_id": previous_id,
+            }
+            return MockResponse(
+                id=response_id,
+                output=[],
+                output_text=stateful_answer,
+                usage={"input_tokens": 0, "output_tokens": 0, "total_tokens": 0},
+            )
+
         calls, direct_answer = self._initial_plan(question)
         response_id = self._new_id()
         tools_run = [call.name for call in calls]
@@ -532,6 +598,7 @@ This free mock mode proves the application flow and uses real database/tool resu
             "tools_run": tools_run,
             "pending_calls": {call.call_id: call.name for call in calls},
             "results": {},
+            "parent_response_id": previous_id,
         }
         return MockResponse(
             id=response_id,
