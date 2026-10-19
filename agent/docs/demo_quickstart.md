@@ -58,6 +58,13 @@ The page should display:
 
 > **Free demo mode:** scripted investigation path with real MySQL/tool results.
 
+It should also show four green readiness indicators:
+
+- **Database** — orders loaded;
+- **Scenario V1** — applied;
+- **Backend** — mock;
+- **Demo status** — Ready to present.
+
 ## 4. Run the main portfolio demo
 
 Click **Full diagnosis** and then **Run investigation**.
@@ -85,7 +92,11 @@ The answer should identify:
 - the modeled impact of a 25% order-to-ship improvement;
 - risks/unknowns and a human-approved next action.
 
-Expand **Inspect tool trace** to show the real SQL/tool results used by the demo.
+The UI now also renders the investigation as a four-step visual path so a reviewer can understand the orchestration without reading raw JSON.
+
+Expand **Inspect tool trace** to show the underlying SQL/tool results used by the demo.
+
+After the run, click **Download Markdown report** to export the business question, answer, tool path, evidence-mode disclosure, and governance note as a portable demo artifact.
 
 ## 5. Use the other demo presets
 
@@ -100,6 +111,12 @@ Runs the deterministic Python scenario simulator and shows modeled days saved.
 ### Approval guardrail
 
 Asks the system to automatically change the business process and customer terms. The system refuses execution and requires human approval.
+
+### Causality follow-up
+
+Use the same stateful session after **Full diagnosis** and click **Causality follow-up**. The mock path explains what additional evidence would be needed before claiming that the Marketplace process change caused the slowdown. This is useful for demonstrating response lineage and causal-discipline design.
+
+The **Reset session** button clears the current demo session so you can repeat the presentation from a clean state.
 
 ## 6. What to say during the demo
 
