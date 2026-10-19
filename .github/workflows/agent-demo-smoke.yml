@@ -42,12 +42,15 @@ jobs:
         run: |
           curl --fail --silent http://localhost:8000/demo/status > /tmp/demo-status.json
           python -c 'import json; p=json.load(open("/tmp/demo-status.json")); assert p["ready"] is True; assert p["database"]["order_count"] > 0; assert p["scenario"]["applied"] is True; assert p["model_backend"] == "mock"; print(p["benchmark"])'
+          curl --fail --silent http://localhost:8000/demo/design > /tmp/demo-design.json
+          python -c 'import json; p=json.load(open("/tmp/demo-design.json")); assert len(p["instruction_rules"]) >= 10; assert len(p["tools"]) == 5; assert p["system_prompt_version"]; assert p["tool_catalog_version"]; assert "Never invent KPI values" in p["full_system_prompt"]; print(p["system_prompt_version"], p["tool_catalog_version"])'
           curl --fail --silent http://localhost:8000/ > /tmp/demo-index.html
           grep -q "Full diagnosis" /tmp/demo-index.html
           grep -q "Demo status" /tmp/demo-index.html
           grep -q "Download Markdown report" /tmp/demo-index.html
           grep -q "Investigation path" /tmp/demo-index.html
           grep -q "Presentation mode" /tmp/demo-index.html
+          grep -q "Inspect agent instructions & tool catalog" /tmp/demo-index.html
           grep -q "process-flow" /tmp/demo-index.html
           python -c 'import re; s=open("/tmp/demo-index.html").read(); m=re.search(r"<script>(.*)</script>", s, re.S); assert m; open("/tmp/demo-ui.js","w").write(m.group(1))'
           node --check /tmp/demo-ui.js
