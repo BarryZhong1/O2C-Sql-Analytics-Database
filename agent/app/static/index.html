@@ -200,6 +200,16 @@
         <button class="preset" data-prompt="causal">Causality follow-up</button>
       </div>
 
+      <div class="row" style="margin-top:10px">
+        <div>
+          <label for="scenario-pct">Custom Order → Ship improvement assumption (%)</label>
+          <input id="scenario-pct" type="number" min="0" max="100" step="1" value="25" />
+        </div>
+        <div style="display:flex; align-items:end">
+          <button id="set-scenario" class="secondary" type="button" style="margin-top:0">Set custom what-if</button>
+        </div>
+      </div>
+
       <div class="row technical">
         <div>
           <label for="session">Session ID</label>
@@ -314,6 +324,18 @@
       event.preventDefault();
       $("question").value = demoPrompts[button.dataset.prompt];
     });
+  });
+
+  $("set-scenario").addEventListener("click", (event) => {
+    event.preventDefault();
+    const pct = Number($("scenario-pct").value);
+    if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
+      return setStatus("Scenario percentage must be between 0 and 100.", "bad");
+    }
+    $("question").value =
+      "What if Q3 2024 order-to-ship time were reduced by " + pct +
+      "%? What happens to the modeled cash cycle?";
+    setStatus("Custom scenario prompt prepared. Click Run investigation.");
   });
 
   async function loadAgentDesign() {
