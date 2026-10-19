@@ -266,6 +266,12 @@ bash agent/scripts/start_demo.sh --open
 
 The UI includes readiness checks, a visual O2C process flow, KPI cards, Q2/Q3 evidence tables, a tool-path view, stateful follow-up, presentation mode, and Markdown report export. A terminal fallback is also available through `scripts/run_demo_cli.py`.
 
+Business-analysis artifacts:
+
+- `docs/business_requirements.md` — users, functional/non-functional requirements, acceptance criteria, and definition of done;
+- `docs/process_improvement_case.md` — AS-IS diagnosis, TO-BE concept, pilot plan, metrics, dependencies, and risks;
+- `docs/requirements_traceability.md` — requirement → implementation → automated validation mapping.
+
 Presentation/evidence docs:
 
 - `docs/demo_quickstart.md` — exact local setup and click path;
