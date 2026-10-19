@@ -98,6 +98,7 @@ Show a follow-up question in the same session, for example:
 Explain:
 
 - the state layer preserves response lineage/session continuity across the model-backend abstraction;
+- in mock mode, the causal follow-up reuses the prior structured investigation results without rerunning the analytical tool chain;
 - in the real OpenAI backend, short-term continuity uses the Responses API `previous_response_id`;
 - local state stores response IDs/timestamps rather than duplicating the raw O2C transcript;
 - long-term memory is deliberately bounded to explicit analyst preferences such as detail level and preferred breakdown;
