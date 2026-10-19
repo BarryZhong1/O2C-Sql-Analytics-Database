@@ -60,6 +60,7 @@ Start here if you are reviewing the AI Process Improvement & Scenario Planning A
 | `project_plan.md` | implementation phases and original roadmap |
 | `prompt_design.md` | actual system prompt, tool semantics, prompt versioning |
 | `requirements_traceability.md` | requirement → implementation → validation mapping |
+| `release_checklist.md` | portfolio MVP release-readiness checklist |
 | `sample_demo_output.md` | reference Scenario V1 result |
 | `scenario_v1_benchmark.md` | measured benchmark and acceptance thresholds |
 | `testing_modes.md` | mock vs OpenAI evidence boundaries |
