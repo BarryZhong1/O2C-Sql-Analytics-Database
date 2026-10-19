@@ -50,6 +50,8 @@ Human approval
 
 If the interviewer asks about prompting, briefly expand **Inspect agent instructions & tool catalog**. Explain that the running app exposes the actual system prompt, tool descriptions, and version hashes, so the prompt discussion is tied to the implementation rather than a separate slide.
 
+If useful, click **Run Workflow v1 baseline** and show the fixed path first. Explain that the baseline can rank stage deterioration and run a scenario, but it cannot decide to drill into sales channel or retrieve process-change context. The agent layer is introduced specifically for those next-step decisions.
+
 Call out two design choices:
 
 1. No model-generated SQL is executed directly.
