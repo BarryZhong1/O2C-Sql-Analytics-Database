@@ -510,7 +510,10 @@
   function updateToolPath(payload) {
     const trace = payload.tool_trace || [];
     if (!trace.length) {
-      $("tool-path").innerHTML = '<div class="tool-step"><div class="step-name">No tool calls</div><div class="step-note">This response did not require an analytical tool.</div></div>';
+      const reusedState = Boolean(payload.parent_response_id);
+      $("tool-path").innerHTML = reusedState
+        ? '<div class="tool-step"><div class="step-no">FOLLOW-UP</div><div class="step-name">Reuse prior investigation state</div><div class="step-note">No redundant analytical tool call was needed for this follow-up.</div></div>'
+        : '<div class="tool-step"><div class="step-name">No tool calls</div><div class="step-note">This response did not require an analytical tool.</div></div>';
       return;
     }
     $("tool-path").innerHTML = trace.map((item, index) => (
