@@ -113,6 +113,11 @@
     .tool-step .step-no { color: var(--accent); font-size: 11px; font-weight: 800; }
     .tool-step .step-name { margin-top: 3px; font-weight: 700; font-size: 13px; }
     .tool-step .step-note { margin-top: 4px; color: var(--muted); font-size: 11px; }
+    .design-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .design-box { border: 1px solid var(--line); background: #0f172a; border-radius: 10px; padding: 12px; }
+    .design-box h3 { margin: 0 0 7px; font-size: 13px; }
+    .design-box ul { margin: 6px 0 0 18px; padding: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .design-meta { color: var(--muted); font-size: 11px; margin-top: 8px; }
     .evidence-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0 16px; }
     .evidence-box { border: 1px solid var(--line); background: var(--panel-2); border-radius: 10px; padding: 12px; }
     .evidence-box h3 { margin: 0 0 8px; font-size: 14px; }
@@ -130,7 +135,7 @@
     .top-actions button { width: auto; margin: 0; padding: 7px 11px; font-size: 12px; }
     body.presentation .technical { display: none !important; }
     body.presentation .grid { grid-template-columns: 1fr; }
-    @media (max-width: 800px) { .grid, .row, .presets, .metric-grid, .readiness, .evidence-grid, .process-flow { grid-template-columns: 1fr; } }
+    @media (max-width: 800px) { .grid, .row, .presets, .metric-grid, .readiness, .evidence-grid, .process-flow, .design-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -143,9 +148,24 @@
   <h1>O2C Process Improvement Agent</h1>
   <p>Investigate process deterioration, drill into business drivers, retrieve operating context, and test transparent what-if scenarios.</p>
   <div id="backend-banner" class="backend-banner">Checking active model backend...</div>
-  <details>
-    <summary>What the agent is instructed to do</summary>
-    <p>Ground KPI claims in approved tools, distinguish evidence from hypotheses and assumptions, avoid causal overclaims, use deterministic Python for what-if math, and leave operational changes behind human approval.</p>
+  <details class="technical" id="design-panel">
+    <summary>Inspect agent instructions & tool catalog</summary>
+    <div class="design-grid">
+      <div class="design-box">
+        <h3>Instruction rules</h3>
+        <ul id="instruction-rules"><li>Loading...</li></ul>
+        <div class="design-meta" id="prompt-version"></div>
+      </div>
+      <div class="design-box">
+        <h3>Approved tools</h3>
+        <div id="tool-catalog">Loading...</div>
+        <div class="design-meta" id="tool-version"></div>
+      </div>
+    </div>
+    <details style="margin-top:10px">
+      <summary>Show full system prompt</summary>
+      <pre id="system-prompt">Loading...</pre>
+    </details>
   </details>
   <div class="readiness">
     <div class="ready-item"><div class="label">Database</div><div class="value" id="ready-db"><span class="ready-dot"></span>Checking</div></div>
@@ -282,6 +302,27 @@
       $("question").value = demoPrompts[button.dataset.prompt];
     });
   });
+
+  async function loadAgentDesign() {
+    try {
+      const response = await fetch("/demo/design");
+      const payload = await readJson(response);
+      const rules = payload.instruction_rules || [];
+      $("instruction-rules").innerHTML = rules.map((rule) => "<li>" + escapeHtml(rule) + "</li>").join("");
+      $("prompt-version").textContent = "Prompt version: " + (payload.system_prompt_version || "unknown");
+      $("tool-version").textContent = "Tool catalog version: " + (payload.tool_catalog_version || "unknown");
+      $("system-prompt").textContent = payload.full_system_prompt || "";
+      $("tool-catalog").innerHTML = (payload.tools || []).map((tool) => (
+        '<div class="tool-step" style="margin-bottom:7px">' +
+        '<div class="step-name">' + escapeHtml(tool.name) + '</div>' +
+        '<div class="step-note">' + escapeHtml(tool.description) + '</div>' +
+        '</div>'
+      )).join("");
+    } catch (error) {
+      $("instruction-rules").innerHTML = "<li>Could not load design metadata.</li>";
+      $("tool-catalog").textContent = "Unavailable";
+    }
+  }
 
   async function loadBackendStatus() {
     try {
@@ -621,6 +662,7 @@
   }
 
   loadBackendStatus();
+  loadAgentDesign();
 
   $("presentation-toggle").addEventListener("click", () => {
     const enabled = document.body.classList.toggle("presentation");
