@@ -225,6 +225,7 @@
       <button id="run">Run investigation</button>
       <div class="actions">
         <button id="reset-session" class="secondary technical" type="button">Reset session</button>
+        <button id="run-workflow" class="secondary technical" type="button">Run Workflow v1 baseline</button>
         <button id="download-report" class="secondary" type="button" disabled>Download Markdown report</button>
         <button id="download-json" class="secondary" type="button" disabled>Download raw JSON</button>
       </div>
@@ -307,6 +308,11 @@
     <details>
       <summary>Inspect tool trace</summary>
       <pre id="trace">[]</pre>
+    </details>
+    <details class="technical" id="workflow-panel">
+      <summary>Compare fixed Workflow v1 baseline</summary>
+      <div id="workflow-summary" class="backend-banner">Run the baseline to compare a fixed workflow with the agent path.</div>
+      <pre id="workflow-json">{}</pre>
     </details>
     <details class="technical">
       <summary>Inspect response metadata</summary>
@@ -761,6 +767,36 @@
   });
   $("download-report").addEventListener("click", downloadReport);
   $("download-json").addEventListener("click", downloadRawJson);
+
+  $("run-workflow").addEventListener("click", async () => {
+    setStatus("Running fixed Workflow v1 baseline...");
+    try {
+      const response = await fetch("/workflow/investigate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          start_date: "2024-07-01",
+          end_date: "2024-09-30",
+          compare_start_date: "2024-04-01",
+          compare_end_date: "2024-06-30"
+        })
+      });
+      const payload = await readJson(response);
+      const scenario = payload.illustrative_scenario?.scenario || {};
+      $("workflow-summary").innerHTML =
+        "<strong>Fixed baseline:</strong> candidate bottleneck = " +
+        escapeHtml(prettyStage(payload.candidate_bottleneck)) +
+        "; illustrative 20% scenario saves " +
+        escapeHtml(formatNumber(scenario.days_saved)) +
+        " modeled days.<br><strong>Limitation:</strong> " +
+        escapeHtml(payload.note || "");
+      $("workflow-json").textContent = JSON.stringify(payload, null, 2);
+      $("workflow-panel").open = true;
+      setStatus("Workflow v1 baseline completed.", "good");
+    } catch (error) {
+      setStatus("Workflow baseline failed: " + error.message, "bad");
+    }
+  });
 
   $("reset-session").addEventListener("click", async () => {
     const session = $("session").value.trim();
