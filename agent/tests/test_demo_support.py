@@ -12,6 +12,7 @@ def test_demo_design_exposes_versioned_prompt_and_tools():
     assert len(payload["system_prompt_version"]) == 12
     assert len(payload["tool_catalog_version"]) == 12
     assert "Never invent KPI values." in payload["instruction_rules"]
+    assert any("human decision gate" in rule for rule in payload["instruction_rules"])
     assert any(tool["name"] == "simulate_stage_improvement" for tool in payload["tools"])
     assert "human approval" in payload["boundaries"]["execution"].lower()
 
