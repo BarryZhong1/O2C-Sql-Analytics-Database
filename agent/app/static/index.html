@@ -133,6 +133,8 @@
     .secondary { background: #1e293b; border-color: #475569; }
     .top-actions { display: flex; justify-content: flex-end; margin: 8px 0 2px; }
     .top-actions button { width: auto; margin: 0; padding: 7px 11px; font-size: 12px; }
+    .top-actions { gap: 8px; align-items: center; }
+    .top-link { display: inline-block; padding: 7px 11px; border: 1px solid #475569; border-radius: 9px; background: #1e293b; color: var(--text); text-decoration: none; font-size: 12px; font-weight: 700; }
     body.presentation .technical { display: none !important; }
     body.presentation .grid { grid-template-columns: 1fr; }
     @media (max-width: 800px) { .grid, .row, .presets, .metric-grid, .readiness, .evidence-grid, .process-flow, .design-grid { grid-template-columns: 1fr; } }
@@ -144,7 +146,7 @@
   <span class="tag">Scenario planning</span>
   <span class="tag">Human approval</span>
   <span class="tag">Mock/OpenAI backend</span>
-  <div class="top-actions"><button id="presentation-toggle" class="secondary" type="button">Presentation mode</button></div>
+  <div class="top-actions"><a class="top-link technical" href="/docs" target="_blank" rel="noopener">API docs</a><button id="presentation-toggle" class="secondary" type="button">Presentation mode</button></div>
   <h1>O2C Process Improvement Agent</h1>
   <p>Investigate process deterioration, drill into business drivers, retrieve operating context, and test transparent what-if scenarios.</p>
   <div id="backend-banner" class="backend-banner">Checking active model backend...</div>
