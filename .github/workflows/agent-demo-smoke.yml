@@ -60,6 +60,13 @@ jobs:
             > agent/artifacts/demo_smoke_response.json
           python agent/scripts/verify_demo_response.py agent/artifacts/demo_smoke_response.json
 
+      - name: Verify terminal fallback demo
+        run: |
+          python agent/scripts/run_demo_cli.py --output agent/artifacts/demo_cli_response.json > /tmp/demo-cli.txt
+          grep -q "O2C PROCESS IMPROVEMENT AGENT" /tmp/demo-cli.txt
+          grep -q "compare_stage_performance" /tmp/demo-cli.txt
+          grep -q "Marketplace" /tmp/demo-cli.txt
+
       - name: Verify stateful follow-up path
         run: |
           curl --fail --silent \
@@ -79,7 +86,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: portfolio-demo-smoke-${{ github.run_number }}
-          path: agent/artifacts/demo_smoke_response.json
+          path: |
+            agent/artifacts/demo_smoke_response.json
+            agent/artifacts/demo_cli_response.json
           if-no-files-found: warn
 
       - name: Show service logs on failure
