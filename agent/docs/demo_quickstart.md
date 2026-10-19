@@ -68,7 +68,21 @@ It should also show four green readiness indicators:
 - **Backend** — mock;
 - **Demo status** — Ready to present.
 
-## 4. Run the main portfolio demo
+## 4. Optional: show the actual prompt/tool design
+
+Before running the analysis, expand **Inspect agent instructions & tool catalog** if the reviewer asks how the agent is prompted.
+
+That panel is loaded from the running application rather than a manually copied slide. It shows:
+
+- the parsed system-prompt rules;
+- all five approved tools and their descriptions;
+- a prompt version hash;
+- a tool-catalog version hash;
+- the full current system prompt.
+
+The **API docs** shortcut opens FastAPI's generated OpenAPI documentation in a separate tab.
+
+## 5. Run the main portfolio demo
 
 Click **Full diagnosis** and then **Run investigation**.
 
@@ -101,7 +115,7 @@ Expand **Inspect tool trace** to show the underlying SQL/tool results used by th
 
 After the run, click **Download Markdown report** to export the business question, KPI/stage/channel evidence tables, scenario results, answer, tool path, evidence-mode disclosure, and governance note as a portable demo artifact.
 
-## 5. Use the other demo presets
+## 6. Use the other demo presets
 
 ### Channel drill-down
 
@@ -121,7 +135,7 @@ Use the same stateful session after **Full diagnosis** and click **Causality fol
 
 The **Reset session** button clears the current demo session so you can repeat the presentation from a clean state.
 
-## 6. What to say during the demo
+## 7. What to say during the demo
 
 A concise explanation:
 
@@ -139,7 +153,7 @@ When showing the scenario:
 
 > The 25% improvement is a transparent what-if assumption calculated in Python. It is not presented as a guaranteed operational effect.
 
-## 7. Important honesty boundary
+## 8. Important honesty boundary
 
 The mock demo **does demonstrate**:
 
@@ -158,7 +172,7 @@ It **does not demonstrate** that a real LLM independently discovered the tool pa
 
 If asked, say exactly that. The project preserves an optional `MODEL_BACKEND=openai` mode for later real-model validation.
 
-## 8. Optional OpenAI mode later
+## 9. Optional OpenAI mode later
 
 After configuring an API key:
 
@@ -171,7 +185,7 @@ bash agent/scripts/start_demo.sh
 
 The UI and business tools remain the same; only the model/orchestration backend changes.
 
-## 9. Stop/reset
+## 10. Stop/reset
 
 Stop containers but keep volumes:
 
