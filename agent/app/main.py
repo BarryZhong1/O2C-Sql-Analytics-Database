@@ -87,11 +87,18 @@ def health() -> dict:
 @app.get("/demo/design")
 def demo_design() -> dict:
     """Expose the bounded agent design used by the running application."""
-    rules = []
+    rules: list[str] = []
+    current_rule: str | None = None
     for line in SYSTEM_PROMPT.splitlines():
         stripped = line.strip()
         if stripped and stripped[0].isdigit() and ". " in stripped:
-            rules.append(stripped.split(". ", 1)[1])
+            if current_rule:
+                rules.append(current_rule)
+            current_rule = stripped.split(". ", 1)[1]
+        elif current_rule and stripped:
+            current_rule += " " + stripped
+    if current_rule:
+        rules.append(current_rule)
 
     tool_catalog = [
         {
