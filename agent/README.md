@@ -280,6 +280,7 @@ Presentation/evidence docs:
 - `docs/demo_one_pager.md` — architecture and validated findings;
 - `docs/sample_demo_output.md` — reference output snapshot;
 - `docs/mock_evaluation_report.md` — version-controlled seven-case mock integration evidence;
+- `docs/portfolio_final_report.md` — completed portfolio MVP report using current validated mock evidence;
 - `docs/final_report_template.md` — optional future real-model result section.
 
 ## CI / deployment validation
