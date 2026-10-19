@@ -1,6 +1,6 @@
-# Order-to-Cash (O2C) Analytics Database Project
+# Order-to-Cash Analytics + AI Process Improvement Agent
 
-A comprehensive SQL database project modeling a complete Order-to-Cash business process with realistic data for business intelligence and analytics.
+A portfolio project combining a realistic Order-to-Cash analytics database with a bounded AI-assisted process-improvement and scenario-planning system.
 
 ![O2C Process Flow](https://img.shields.io/badge/Process-Order%20to%20Cash-blue) ![Database](https://img.shields.io/badge/Database-MySQL%208.0-orange) ![Records](https://img.shields.io/badge/Dataset-500%2B%20Orders-green)
 
@@ -41,6 +41,14 @@ This branch extends the SQL project into a deployable business-analysis agent wi
 ### Zero-cost portfolio demo
 
 Requirements: Docker Desktop / Docker Compose v2.
+
+Fast path on macOS/Linux:
+
+```bash
+make demo-open
+```
+
+Equivalent direct command:
 
 ```bash
 git checkout feature/process-improvement-agent
