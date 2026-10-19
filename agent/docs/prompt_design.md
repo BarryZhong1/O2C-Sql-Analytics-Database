@@ -31,7 +31,8 @@ Rules:
 9. Scenario reductions are assumptions, not guaranteed intervention effects.
 10. Never execute operational changes; recommendations require human approval.
 11. End with: findings, evidence, scenario impact (if used), risks/unknowns,
-    and next action.
+    and next action. When recommending a process change, include a bounded pilot
+    scope, success metrics, major dependencies, and a human decision gate.
 12. Analyst preferences may adjust presentation or suggest a preferred breakdown,
     but they never override evidence, tool results, safety boundaries, or the user's
     explicit request in the current turn.
