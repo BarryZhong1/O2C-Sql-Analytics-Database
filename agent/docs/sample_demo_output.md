@@ -71,6 +71,13 @@ The demo recommendation calls out that stronger evidence would include:
 
 Pilot a targeted Marketplace order-release improvement, track Order → Ship time and exception rate, and compare the pilot cohort with an appropriate baseline before broad policy changes.
 
+### Proposed implementation plan
+
+- scope: Marketplace order-release / promotional-review workflow;
+- success metrics: Order → Ship time, exception/rework rate, SLA attainment, and total O2C cycle time;
+- dependencies: review-queue instrumentation and a clearly defined affected/control cohort;
+- decision gate: review pilot evidence before any broad process or policy change.
+
 Implementation remains subject to human approval.
 
 ## Tool trace
