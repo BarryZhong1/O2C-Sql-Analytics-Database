@@ -46,7 +46,7 @@ jobs:
       - name: Verify demo readiness and analyst UI
         run: |
           curl --fail --silent http://localhost:8000/demo/status > /tmp/demo-status.json
-          python -c 'import json; p=json.load(open("/tmp/demo-status.json")); assert p["ready"] is True; assert p["database"]["order_count"] > 0; assert p["scenario"]["applied"] is True; assert p["model_backend"] == "mock"; print(p["benchmark"])'
+          python -c 'import json; p=json.load(open("/tmp/demo-status.json")); assert p["ready"] is True; assert p["database"]["order_count"] > 0; assert p["scenario"]["applied"] is True; assert p["model_backend"] == "mock"; assert p["app_version"] == "0.5.0"; print(p["benchmark"])'
           curl --fail --silent http://localhost:8000/demo/design > /tmp/demo-design.json
           mkdir -p agent/artifacts
           cp /tmp/demo-design.json agent/artifacts/demo_design.json
