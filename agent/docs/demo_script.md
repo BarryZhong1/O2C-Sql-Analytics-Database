@@ -28,7 +28,7 @@ Explain:
 
 Show the analyst UI and the read-only / scenario-planning / human-approval tags. For a cleaner recording, click **Presentation mode** to hide the session/profile preference controls; exit presentation mode later if you want to explain state and memory.
 
-## 0:40-1:20 — Architecture
+## 0:40-1:20 — Architecture and instructions
 
 Briefly explain the flow:
 
@@ -47,6 +47,8 @@ Evidence-backed recommendation
       ↓
 Human approval
 ```
+
+If the interviewer asks about prompting, briefly expand **Inspect agent instructions & tool catalog**. Explain that the running app exposes the actual system prompt, tool descriptions, and version hashes, so the prompt discussion is tied to the implementation rather than a separate slide.
 
 Call out two design choices:
 
