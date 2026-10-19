@@ -69,7 +69,7 @@
     .process-stage .stage-title { font-weight: 800; }
     .process-stage .stage-change { margin-top: 4px; font-size: 12px; color: var(--muted); }
     .process-stage.active .stage-change { color: #fbbf24; }
-    .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+    .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 10px; margin-bottom: 14px; }
     .metric-card { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
     .metric-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
     .metric-value { font-size: 22px; font-weight: 800; margin-top: 5px; }
@@ -283,6 +283,11 @@
         <div class="metric-value" id="metric-scenario">—</div>
         <div class="metric-note" id="metric-scenario-note">25% order-to-ship what-if</div>
       </div>
+      <div class="metric-card">
+        <div class="metric-label">Evidence status</div>
+        <div class="metric-value" id="metric-evidence">—</div>
+        <div class="metric-note" id="metric-evidence-note">Causal claim not evaluated yet</div>
+      </div>
     </div>
     <div class="evidence-grid">
       <div class="evidence-box">
@@ -453,6 +458,7 @@
       item.tool === "analyze_process" && item.arguments?.group_by === "channel"
     );
     const scenarioCall = trace.find((item) => item.tool === "simulate_stage_improvement");
+    const policyCall = trace.find((item) => item.tool === "retrieve_policy");
 
     if (stageCall) {
       const result = stageCall.result || {};
@@ -482,6 +488,16 @@
       $("metric-scenario").textContent = formatNumber(scenario.days_saved) + " d";
       $("metric-scenario-note").textContent =
         formatNumber(scenario.percent_improvement) + "% modeled cash-cycle improvement";
+    }
+
+    if (policyCall) {
+      $("metric-evidence").textContent = "Hypothesis";
+      $("metric-evidence-note").textContent =
+        "Context supports investigation; causal proof still pending";
+    } else if (trace.length) {
+      $("metric-evidence").textContent = "Descriptive";
+      $("metric-evidence-note").textContent =
+        "Grounded in measured tool results";
     }
   }
 
