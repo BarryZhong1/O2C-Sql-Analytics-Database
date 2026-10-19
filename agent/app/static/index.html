@@ -102,6 +102,9 @@
     .presets { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin: 10px 0 4px; }
     .preset { margin: 0; padding: 8px; font-size: 12px; background: #1e3a5f; border-color: #31577f; }
     .readiness { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 12px 0 18px; }
+    .arch-flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 0 0 18px; }
+    .arch-node { border: 1px solid var(--line); background: #0f172a; border-radius: 10px; padding: 10px; text-align: center; font-size: 12px; font-weight: 700; }
+    .arch-node small { display: block; margin-top: 4px; color: var(--muted); font-weight: 400; line-height: 1.35; }
     .ready-item { border: 1px solid var(--line); background: var(--panel-2); border-radius: 10px; padding: 10px 12px; }
     .ready-item .label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
     .ready-item .value { margin-top: 5px; font-weight: 700; }
@@ -137,7 +140,7 @@
     .top-link { display: inline-block; padding: 7px 11px; border: 1px solid #475569; border-radius: 9px; background: #1e293b; color: var(--text); text-decoration: none; font-size: 12px; font-weight: 700; }
     body.presentation .technical { display: none !important; }
     body.presentation .grid { grid-template-columns: 1fr; }
-    @media (max-width: 800px) { .grid, .row, .presets, .metric-grid, .readiness, .evidence-grid, .process-flow, .design-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 800px) { .grid, .row, .presets, .metric-grid, .readiness, .evidence-grid, .process-flow, .design-grid, .arch-flow { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -174,6 +177,14 @@
     <div class="ready-item"><div class="label">Scenario V1</div><div class="value" id="ready-scenario"><span class="ready-dot"></span>Checking</div></div>
     <div class="ready-item"><div class="label">Backend</div><div class="value" id="ready-backend"><span class="ready-dot"></span>Checking</div></div>
     <div class="ready-item"><div class="label">Demo status</div><div class="value" id="ready-overall"><span class="ready-dot"></span>Checking</div></div>
+  </div>
+
+  <div class="arch-flow">
+    <div class="arch-node">Business question<small>Natural-language problem</small></div>
+    <div class="arch-node">Model boundary<small>Mock demo / OpenAI optional</small></div>
+    <div class="arch-node">Approved tools<small>SQL • retrieval • Python</small></div>
+    <div class="arch-node">Evidence package<small>Metrics • context • scenario</small></div>
+    <div class="arch-node">Human decision<small>No operational write tools</small></div>
   </div>
 
   <div class="grid">
