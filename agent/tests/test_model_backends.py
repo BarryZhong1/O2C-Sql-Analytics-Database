@@ -234,3 +234,72 @@ def test_mock_showcase_accepts_natural_paraphrase():
 
     assert response.output
     assert response.output[0].name == "compare_stage_performance"
+
+
+def test_mock_stateful_causal_followup_reuses_prior_results():
+    mock = ScriptedMockResponses()
+    parent_id = "mock_parent"
+    mock._state[parent_id] = {
+        "question": "prior investigation",
+        "phase": 4,
+        "tools_run": [
+            "compare_stage_performance",
+            "analyze_process",
+            "retrieve_policy",
+            "simulate_stage_improvement",
+        ],
+        "pending_calls": {},
+        "results": {
+            "compare_stage_performance": {
+                "deterioration_rank": [
+                    {
+                        "stage": "order_to_ship_days",
+                        "comparison_days": 1.48,
+                        "current_days": 2.09,
+                        "absolute_change_days": 0.61,
+                    }
+                ]
+            },
+            "analyze_process": {
+                "group_change_summary": {
+                    "deterioration_rank": [
+                        {
+                            "dimension_value": "Marketplace",
+                            "comparison_value": 1.45,
+                            "current_value": 4.62,
+                            "absolute_change": 3.17,
+                        }
+                    ]
+                }
+            },
+            "retrieve_policy": {
+                "matches": [
+                    {
+                        "paragraph": (
+                            "A manual promotional-code review step was introduced "
+                            "for Marketplace orders beginning July 1, 2024."
+                        )
+                    }
+                ]
+            },
+        },
+    }
+
+    response = mock.create(
+        previous_response_id=parent_id,
+        input=[
+            {
+                "role": "user",
+                "content": (
+                    "What evidence would I need before claiming the Marketplace "
+                    "promotional review caused the slowdown?"
+                ),
+            }
+        ],
+    )
+
+    assert response.output == []
+    assert "stateful follow-up" in response.output_text.lower()
+    assert "Order → Ship" in response.output_text
+    assert "Marketplace" in response.output_text
+    assert "Timing alone is not proof" in response.output_text
