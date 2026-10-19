@@ -298,6 +298,11 @@ The branch includes separate workflows for:
 
 The automatic Docker smoke test does **not** call the model API. A dedicated portfolio demo smoke test also launches the documented one-command demo, validates `/demo/status`, syntax-checks the inline UI JavaScript, runs the main four-tool investigation, exercises the terminal fallback, and verifies a stateful causal follow-up.
 
+## Release status
+
+- `CHANGELOG.md` summarizes the v0.5.0 portfolio MVP release candidate.
+- `docs/release_checklist.md` captures the release-readiness criteria and optional future enhancements.
+
 ## Roadmap status
 
 - **P1 — Workflow baseline:** implemented and benchmarked.
