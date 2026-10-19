@@ -50,6 +50,7 @@ jobs:
           grep -q "Full diagnosis" /tmp/demo-index.html
           grep -q "Demo status" /tmp/demo-index.html
           grep -q "Download Markdown report" /tmp/demo-index.html
+          grep -q "Download raw JSON" /tmp/demo-index.html
           grep -q "Investigation path" /tmp/demo-index.html
           grep -q "Presentation mode" /tmp/demo-index.html
           grep -q "Custom Order" /tmp/demo-index.html
