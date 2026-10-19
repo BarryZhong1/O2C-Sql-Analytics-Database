@@ -43,6 +43,8 @@ jobs:
           curl --fail --silent http://localhost:8000/demo/status > /tmp/demo-status.json
           python -c 'import json; p=json.load(open("/tmp/demo-status.json")); assert p["ready"] is True; assert p["database"]["order_count"] > 0; assert p["scenario"]["applied"] is True; assert p["model_backend"] == "mock"; print(p["benchmark"])'
           curl --fail --silent http://localhost:8000/demo/design > /tmp/demo-design.json
+          mkdir -p agent/artifacts
+          cp /tmp/demo-design.json agent/artifacts/demo_design.json
           python -c 'import json; p=json.load(open("/tmp/demo-design.json")); assert len(p["instruction_rules"]) >= 10; assert len(p["tools"]) == 5; assert p["system_prompt_version"]; assert p["tool_catalog_version"]; assert "Never invent KPI values" in p["full_system_prompt"]; print(p["system_prompt_version"], p["tool_catalog_version"])'
           curl --fail --silent http://localhost:8000/ > /tmp/demo-index.html
           grep -q "Full diagnosis" /tmp/demo-index.html
@@ -64,6 +66,17 @@ jobs:
             -d '{"question":"Investigate why O2C cycle time worsened in Q3 2024 versus Q2 2024. Identify the stage that deteriorated most, drill into the strongest driver, and test a realistic improvement scenario."}' \
             > agent/artifacts/demo_smoke_response.json
           python agent/scripts/verify_demo_response.py agent/artifacts/demo_smoke_response.json
+
+      - name: Build portable Markdown demo report
+        run: |
+          python agent/scripts/build_demo_report.py \
+            --response agent/artifacts/demo_smoke_response.json \
+            --design agent/artifacts/demo_design.json \
+            --output agent/artifacts/demo_report.md
+          grep -q "## KPI summary" agent/artifacts/demo_report.md
+          grep -q "Marketplace" agent/artifacts/demo_report.md
+          grep -q "System prompt" agent/artifacts/demo_report.md
+          grep -q "human approval" agent/artifacts/demo_report.md
 
       - name: Verify terminal fallback demo
         run: |
@@ -94,6 +107,8 @@ jobs:
           path: |
             agent/artifacts/demo_smoke_response.json
             agent/artifacts/demo_cli_response.json
+            agent/artifacts/demo_design.json
+            agent/artifacts/demo_report.md
           if-no-files-found: warn
 
       - name: Show service logs on failure
