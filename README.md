@@ -76,6 +76,16 @@ The free demo uses a scripted mock only at the model/orchestration boundary. The
 
 See [Agent README](agent/README.md), [Demo Quick Start](agent/docs/demo_quickstart.md), and [Demo Interview Q&A](agent/docs/demo_interview_qa.md).
 
+### Validated demo evidence
+
+- controlled Scenario V1 benchmark;
+- **7/7** scripted mock integration cases passed deterministic trace checks;
+- one-command portfolio demo smoke test passes end-to-end;
+- Docker/API/UI smoke tests pass;
+- browser UI includes readiness checks, process-flow highlighting, evidence tables, tool path, stateful follow-up, presentation mode, and Markdown report export.
+
+See [Mock Evaluation Report](agent/docs/mock_evaluation_report.md), [Sample Demo Output](agent/docs/sample_demo_output.md), and [Demo One-Pager](agent/docs/demo_one_pager.md).
+
 ### Business Process Coverage
 - **Customer Management**: Customer segmentation, credit limits, payment terms
 - **Product Catalog**: Multi-category inventory with pricing and cost tracking
