@@ -3,7 +3,7 @@ name: Agent Docker smoke test
 on:
   push:
     branches:
-      - feature/process-improvement-agent
+      - main
     paths:
       - "agent/Dockerfile"
       - "agent/.dockerignore"
