@@ -105,10 +105,20 @@
     .tool-step .step-no { color: var(--accent); font-size: 11px; font-weight: 800; }
     .tool-step .step-name { margin-top: 3px; font-weight: 700; font-size: 13px; }
     .tool-step .step-note { margin-top: 4px; color: var(--muted); font-size: 11px; }
+    .evidence-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0 16px; }
+    .evidence-box { border: 1px solid var(--line); background: var(--panel-2); border-radius: 10px; padding: 12px; }
+    .evidence-box h3 { margin: 0 0 8px; font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { text-align: left; padding: 7px 5px; border-bottom: 1px solid var(--line); }
+    th { color: var(--muted); font-weight: 600; }
+    td.num, th.num { text-align: right; }
+    tr:last-child td { border-bottom: 0; }
+    .delta-up { color: #fca5a5; font-weight: 700; }
+    .delta-down { color: #86efac; font-weight: 700; }
     .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
     .actions button { width: auto; margin-top: 0; padding: 8px 12px; font-size: 12px; }
     .secondary { background: #1e293b; border-color: #475569; }
-    @media (max-width: 800px) { .grid, .row, .presets, .metric-grid, .readiness { grid-template-columns: 1fr; } }
+    @media (max-width: 800px) { .grid, .row, .presets, .metric-grid, .readiness, .evidence-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -207,6 +217,16 @@
         <div class="metric-label">Scenario days saved</div>
         <div class="metric-value" id="metric-scenario">—</div>
         <div class="metric-note" id="metric-scenario-note">25% order-to-ship what-if</div>
+      </div>
+    </div>
+    <div class="evidence-grid">
+      <div class="evidence-box">
+        <h3>Stage comparison</h3>
+        <table><thead><tr><th>Stage</th><th class="num">Q2</th><th class="num">Q3</th><th class="num">Δ</th></tr></thead><tbody id="stage-table"><tr><td colspan="4">Run Full diagnosis.</td></tr></tbody></table>
+      </div>
+      <div class="evidence-box">
+        <h3>Channel deterioration</h3>
+        <table><thead><tr><th>Channel</th><th class="num">Q2</th><th class="num">Q3</th><th class="num">Δ</th></tr></thead><tbody id="channel-table"><tr><td colspan="4">Run Full diagnosis.</td></tr></tbody></table>
       </div>
     </div>
     <h2>Investigation path</h2>
@@ -319,6 +339,44 @@
       $("metric-scenario").textContent = formatNumber(scenario.days_saved) + " d";
       $("metric-scenario-note").textContent =
         formatNumber(scenario.percent_improvement) + "% modeled cash-cycle improvement";
+    }
+  }
+
+  function deltaClass(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n === 0) return "";
+    return n > 0 ? "delta-up" : "delta-down";
+  }
+
+  function updateEvidenceTables(payload) {
+    const trace = payload.tool_trace || [];
+    const stageCall = trace.find((item) => item.tool === "compare_stage_performance");
+    const channelCall = trace.find((item) => item.tool === "analyze_process" && item.arguments && item.arguments.group_by === "channel");
+
+    if (stageCall) {
+      const rows = stageCall.result && stageCall.result.deterioration_rank || [];
+      $("stage-table").innerHTML = rows.map((row) => (
+        "<tr>" +
+        "<td>" + prettyStage(row.stage) + "</td>" +
+        '<td class="num">' + formatNumber(row.comparison_days) + "</td>" +
+        '<td class="num">' + formatNumber(row.current_days) + "</td>" +
+        '<td class="num ' + deltaClass(row.absolute_change_days) + '">' +
+          (Number(row.absolute_change_days) > 0 ? "+" : "") + formatNumber(row.absolute_change_days) +
+        "</td></tr>"
+      )).join("") || '<tr><td colspan="4">No stage data returned.</td></tr>';
+    }
+
+    if (channelCall) {
+      const rows = channelCall.result && channelCall.result.group_change_summary && channelCall.result.group_change_summary.deterioration_rank || [];
+      $("channel-table").innerHTML = rows.map((row) => (
+        "<tr>" +
+        "<td>" + (row.dimension_value || "—") + "</td>" +
+        '<td class="num">' + formatNumber(row.comparison_value) + "</td>" +
+        '<td class="num">' + formatNumber(row.current_value) + "</td>" +
+        '<td class="num ' + deltaClass(row.absolute_change) + '">' +
+          (Number(row.absolute_change) > 0 ? "+" : "") + formatNumber(row.absolute_change) +
+        "</td></tr>"
+      )).join("") || '<tr><td colspan="4">No channel data returned.</td></tr>';
     }
   }
 
@@ -473,6 +531,7 @@
       });
       const payload = await readJson(response);
       updateMetricCards(payload);
+      updateEvidenceTables(payload);
       updateToolPath(payload);
       latestPayload = payload;
       latestQuestion = question;
