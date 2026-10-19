@@ -216,3 +216,21 @@ def test_mock_showcase_runs_four_step_demo_plan():
     assert "Marketplace" in final.output_text
     assert "0.52" in final.output_text
     assert "scripted" in final.output_text.lower()
+
+
+def test_mock_showcase_accepts_natural_paraphrase():
+    mock = ScriptedMockResponses()
+    response = mock.create(
+        input=[
+            {
+                "role": "user",
+                "content": (
+                    "Why did Order-to-Cash performance get slower in Q3 2024 "
+                    "compared with Q2 2024, and what happened?"
+                ),
+            }
+        ]
+    )
+
+    assert response.output
+    assert response.output[0].name == "compare_stage_performance"
