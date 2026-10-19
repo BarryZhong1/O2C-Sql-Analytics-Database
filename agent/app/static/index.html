@@ -75,7 +75,6 @@
     .metric-value { font-size: 22px; font-weight: 800; margin-top: 5px; }
     .metric-note { color: var(--muted); font-size: 11px; margin-top: 4px; }
     #answer {
-      white-space: pre-wrap;
       line-height: 1.6;
       background: var(--panel-2);
       border: 1px solid var(--line);
@@ -83,6 +82,9 @@
       padding: 14px;
       min-height: 120px;
     }
+    .answer-heading { margin: 14px 0 5px; font-size: 13px; letter-spacing: .05em; color: var(--accent); }
+    .answer-line { margin: 3px 0; color: var(--text); }
+    .answer-bullet { margin: 3px 0 3px 16px; color: var(--text); }
     details { margin-top: 14px; }
     summary { cursor: pointer; color: var(--accent); }
     pre {
@@ -307,6 +309,30 @@
   function setStatus(message, kind = "") {
     $("status").textContent = message;
     $("status").className = kind;
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function renderAnswer(text) {
+    const lines = String(text || "").split("\n");
+    return lines.map((raw) => {
+      const line = raw.trim();
+      if (!line) return '<div class="answer-line">&nbsp;</div>';
+      if (/^[A-Z][A-Z0-9 /&()_-]{2,45}$/.test(line)) {
+        return '<div class="answer-heading">' + escapeHtml(line) + '</div>';
+      }
+      if (line.startsWith("- ")) {
+        return '<div class="answer-bullet">• ' + escapeHtml(line.slice(2)) + '</div>';
+      }
+      return '<div class="answer-line">' + escapeHtml(line) + '</div>';
+    }).join("");
   }
 
   function formatNumber(value, digits = 2) {
@@ -665,7 +691,7 @@
       latestPayload = payload;
       latestQuestion = question;
       $("download-report").disabled = false;
-      $("answer").textContent = payload.answer || "No answer returned.";
+      $("answer").innerHTML = renderAnswer(payload.answer || "No answer returned.");
       $("trace").textContent = JSON.stringify(payload.tool_trace || [], null, 2);
       const metadata = { ...payload };
       delete metadata.answer;
