@@ -88,7 +88,7 @@ flowchart LR
 
 The free demo uses a scripted mock only at the model/orchestration boundary. The same business tools remain available to the optional OpenAI Responses API backend.
 
-See [Agent README](agent/README.md), [Demo Quick Start](agent/docs/demo_quickstart.md), [Prompt & Tool Design](agent/docs/prompt_design.md), [Business Requirements](agent/docs/business_requirements.md), [Process Improvement Case](agent/docs/process_improvement_case.md), and [Demo Interview Q&A](agent/docs/demo_interview_qa.md).
+See [Agent README](agent/README.md), [Documentation Index](agent/docs/README.md), [Demo Quick Start](agent/docs/demo_quickstart.md), [Prompt & Tool Design](agent/docs/prompt_design.md), [Business Requirements](agent/docs/business_requirements.md), [Process Improvement Case](agent/docs/process_improvement_case.md), and [Demo Interview Q&A](agent/docs/demo_interview_qa.md).
 
 ### Validated demo evidence
 
