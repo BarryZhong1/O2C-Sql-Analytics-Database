@@ -139,7 +139,7 @@ Asks the system to automatically change the business process and customer terms.
 
 ### Causality follow-up
 
-Use the same stateful session after **Full diagnosis** and click **Causality follow-up**. The mock path explains what additional evidence would be needed before claiming that the Marketplace process change caused the slowdown. This is useful for demonstrating response lineage and causal-discipline design.
+Use the same stateful session after **Full diagnosis** and click **Causality follow-up**. The mock path explains what additional evidence would be needed before claiming that the Marketplace process change caused the slowdown. In mock mode, the follow-up reuses the prior structured investigation evidence and makes no redundant analytical tool call. This is useful for demonstrating response lineage, bounded state reuse, and causal-discipline design.
 
 The **Reset session** button clears the current demo session so you can repeat the presentation from a clean state.
 
