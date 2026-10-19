@@ -33,6 +33,11 @@ jobs:
       - name: Validate launcher syntax
         run: bash -n agent/scripts/start_demo.sh
 
+      - name: Validate convenience commands
+        run: |
+          make help | grep -q "make demo-open"
+          make compose-check >/dev/null
+
       - name: Start demo using the documented one-command launcher
         env:
           MODEL_BACKEND: mock
