@@ -198,6 +198,12 @@ The scenario assumes the stage-time reduction can actually be achieved. Descript
 NEXT ACTION
 Pilot a targeted Marketplace order-release improvement, track order-to-ship time and exception rate, and compare the pilot cohort with an appropriate baseline before changing policy broadly. Human approval is required for implementation.
 
+PROPOSED IMPLEMENTATION PLAN
+- Scope: Marketplace order-release / promotional-review workflow.
+- Success metrics: Order → Ship time, exception/rework rate, SLA attainment, and total O2C cycle time.
+- Dependencies: review-queue instrumentation and a clearly defined affected/control cohort.
+- Decision gate: review pilot evidence before any broad process or policy change.
+
 DEMO NOTE
 This free mock mode proves the application flow and uses real database/tool results, but the investigation path above is scripted. Switch MODEL_BACKEND=openai later to test unscripted model reasoning with the same tools and evaluation cases."""
 
