@@ -36,11 +36,15 @@ jobs:
           MODEL_BACKEND: mock
         run: bash agent/scripts/start_demo.sh
 
-      - name: Verify analyst UI
+      - name: Verify demo readiness and analyst UI
         run: |
+          curl --fail --silent http://localhost:8000/demo/status > /tmp/demo-status.json
+          python -c 'import json; p=json.load(open("/tmp/demo-status.json")); assert p["ready"] is True; assert p["database"]["order_count"] > 0; assert p["scenario"]["applied"] is True; assert p["model_backend"] == "mock"; print(p["benchmark"])'
           curl --fail --silent http://localhost:8000/ > /tmp/demo-index.html
           grep -q "Full diagnosis" /tmp/demo-index.html
-          grep -q "Free demo mode" /tmp/demo-index.html
+          grep -q "Demo status" /tmp/demo-index.html
+          grep -q "Download Markdown report" /tmp/demo-index.html
+          grep -q "Investigation path" /tmp/demo-index.html
 
       - name: Run and verify the main portfolio demo
         run: |
@@ -51,6 +55,20 @@ jobs:
             -d '{"question":"Investigate why O2C cycle time worsened in Q3 2024 versus Q2 2024. Identify the stage that deteriorated most, drill into the strongest driver, and test a realistic improvement scenario."}' \
             > agent/artifacts/demo_smoke_response.json
           python agent/scripts/verify_demo_response.py agent/artifacts/demo_smoke_response.json
+
+      - name: Verify stateful follow-up path
+        run: |
+          curl --fail --silent \
+            -X POST http://localhost:8000/agent/session/demo-smoke/ask \
+            -H "Content-Type: application/json" \
+            -d '{"question":"Investigate why O2C cycle time worsened in Q3 2024 versus Q2 2024. Identify the stage that deteriorated most, drill into the strongest driver, and test a realistic improvement scenario."}' \
+            > /tmp/session-first.json
+          curl --fail --silent \
+            -X POST http://localhost:8000/agent/session/demo-smoke/ask \
+            -H "Content-Type: application/json" \
+            -d '{"question":"What evidence would I need before claiming the Marketplace promotional review caused the slowdown?"}' \
+            > /tmp/session-followup.json
+          python -c 'import json; a=json.load(open("/tmp/session-first.json")); b=json.load(open("/tmp/session-followup.json")); assert a["session"]["session_id"]=="demo-smoke"; assert b["parent_response_id"]==a["response_id"]; assert "causal" in b["answer"].lower() or "proof" in b["answer"].lower(); print("Stateful follow-up path passed.")'
 
       - name: Upload demo smoke artifact
         if: always()
