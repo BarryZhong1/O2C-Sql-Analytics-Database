@@ -2,6 +2,8 @@ name: Portfolio demo smoke test
 
 on:
   push:
+    branches:
+      - main
     paths:
       - "agent/**"
       - "sql/**"
