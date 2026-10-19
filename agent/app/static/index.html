@@ -378,7 +378,7 @@
       const overallOk = Boolean(payload.ready);
       $("ready-db").innerHTML = '<span class="ready-dot ' + (dbOk ? "good" : "bad") + '"></span>' + (dbOk ? payload.database.order_count + " orders loaded" : "Not ready");
       $("ready-scenario").innerHTML = '<span class="ready-dot ' + (scenarioOk ? "good" : "bad") + '"></span>' + (scenarioOk ? "Applied" : "Not applied");
-      $("ready-backend").innerHTML = '<span class="ready-dot good"></span>' + backend;
+      $("ready-backend").innerHTML = '<span class="ready-dot good"></span>' + backend + (payload.app_version ? " · v" + payload.app_version : "");
       $("ready-overall").innerHTML = '<span class="ready-dot ' + (overallOk ? "good" : "bad") + '"></span>' + (overallOk ? "Ready to present" : "Setup incomplete");
     } catch (error) {
       $("backend-banner").textContent = "Could not read demo readiness status.";
