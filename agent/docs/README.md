@@ -4,9 +4,10 @@ Start here if you are reviewing the AI Process Improvement & Scenario Planning A
 
 ## Fastest paths
 
-### I want to run the demo
+### I want to run or understand the application
 
-1. `demo_quickstart.md`
+1. `user_manual.md`
+2. `demo_quickstart.md`
 2. `demo_script.md`
 3. `sample_demo_output.md`
 
@@ -64,6 +65,7 @@ Start here if you are reviewing the AI Process Improvement & Scenario Planning A
 | `sample_demo_output.md` | reference Scenario V1 result |
 | `scenario_v1_benchmark.md` | measured benchmark and acceptance thresholds |
 | `testing_modes.md` | mock vs OpenAI evidence boundaries |
+| `user_manual.md` | complete usage guide plus internal mechanics |
 
 ## Reviewer recommendation
 
