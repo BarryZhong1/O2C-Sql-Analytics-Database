@@ -98,7 +98,7 @@ See [Agent README](agent/README.md), [Demo Quick Start](agent/docs/demo_quicksta
 - Docker/API/UI smoke tests pass;
 - browser UI includes readiness checks, process-flow highlighting, evidence tables, tool path, stateful follow-up, presentation mode, and Markdown report export.
 
-See [Mock Evaluation Report](agent/docs/mock_evaluation_report.md), [Sample Demo Output](agent/docs/sample_demo_output.md), and [Demo One-Pager](agent/docs/demo_one_pager.md).
+See [Portfolio MVP Report](agent/docs/portfolio_final_report.md), [Mock Evaluation Report](agent/docs/mock_evaluation_report.md), [Sample Demo Output](agent/docs/sample_demo_output.md), and [Demo One-Pager](agent/docs/demo_one_pager.md).
 
 ### Business Process Coverage
 - **Customer Management**: Customer segmentation, credit limits, payment terms
