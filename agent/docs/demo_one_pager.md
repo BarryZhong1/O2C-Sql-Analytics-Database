@@ -76,6 +76,13 @@ The 25% reduction is an assumption, not a guaranteed intervention effect.
 
 Run a targeted Marketplace order-release pilot, track Order → Ship time and exception rate, and compare an appropriate pilot/control or affected/unaffected cohort before broad rollout.
 
+Suggested implementation framing:
+
+- **Scope:** Marketplace order-release / promotional-review workflow;
+- **Success metrics:** Order → Ship time, exception/rework rate, SLA attainment, total O2C cycle time;
+- **Dependencies:** review-queue instrumentation and a clearly defined affected/control cohort;
+- **Decision gate:** human review of pilot evidence before broader process or policy change.
+
 ## Controls
 
 - no free-form model-generated SQL;
