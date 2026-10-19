@@ -118,6 +118,12 @@ Recommended phrasing:
 
 > The mock is at the model boundary, not at the database or analytical-tool layer.
 
+## How does the stateful follow-up work?
+
+> The application stores the latest response lineage ID per session. In the free mock demo, the scripted causal follow-up can retrieve the prior structured tool results associated with that response ID and answer without rerunning the analytical chain. In real OpenAI mode, the same session endpoint passes the previous response ID back to the Responses API for conversational continuity.
+
+The local state database stores lineage metadata rather than duplicating the raw O2C transcript.
+
 ## How would real API mode differ?
 
 > I switch `MODEL_BACKEND=mock` to `MODEL_BACKEND=openai` and provide an API key. The UI and business tools do not change. The real model receives the same system instructions and tool schemas, then chooses tool calls through the Responses API.
