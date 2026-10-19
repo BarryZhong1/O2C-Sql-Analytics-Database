@@ -119,7 +119,7 @@ The UI now also renders the investigation as a four-step visual path so a review
 
 Expand **Inspect tool trace** to show the underlying SQL/tool results used by the demo.
 
-After the run, click **Download Markdown report** to export the business question, KPI/stage/channel evidence tables, scenario results, answer, tool path, evidence-mode disclosure, and governance note as a portable demo artifact.
+After the run, click **Download Markdown report** to export the business question, KPI/stage/channel evidence tables, scenario results, answer, tool path, evidence-mode disclosure, and governance note as a portable demo artifact. Use **Download raw JSON** when you want the complete machine-readable response and tool trace for technical review.
 
 ## 6. Use the other demo presets
 
