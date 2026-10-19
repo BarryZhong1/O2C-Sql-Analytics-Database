@@ -258,7 +258,7 @@ Mock outputs are labeled and must not be reported as real-model performance. See
 
 ## Documentation map
 
-Use `docs/README.md` as the reviewer-oriented index for business analysis, architecture, evaluation, and demo materials.
+Use `docs/user_manual.md` for the complete end-user and mechanics manual. Use `docs/README.md` as the reviewer-oriented index for business analysis, architecture, evaluation, and demo materials.
 
 ## Demo and final report
 
