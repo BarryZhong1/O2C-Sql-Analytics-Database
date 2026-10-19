@@ -224,7 +224,7 @@
       <label class="check technical"><input id="use-session" type="checkbox" checked /> Continue a stateful investigation session</label>
       <button id="run">Run investigation</button>
       <div class="actions">
-        <button id="reset-session" class="secondary" type="button">Reset session</button>
+        <button id="reset-session" class="secondary technical" type="button">Reset session</button>
         <button id="download-report" class="secondary" type="button" disabled>Download Markdown report</button>
         <button id="download-json" class="secondary" type="button" disabled>Download raw JSON</button>
       </div>
@@ -429,6 +429,26 @@
       invoice_to_payment_days: "Invoice → Payment"
     };
     return labels[stage] || stage || "—";
+  }
+
+  function resetEvidenceVisuals() {
+    document.querySelectorAll(".process-stage").forEach((node) => {
+      node.classList.remove("active");
+      const change = node.querySelector(".stage-change");
+      if (change) change.textContent = "Not calculated in this run";
+    });
+    $("metric-cycle").textContent = "—";
+    $("metric-cycle-note").textContent = "Not calculated in this run";
+    $("metric-stage").textContent = "—";
+    $("metric-stage-note").textContent = "Not calculated in this run";
+    $("metric-channel").textContent = "—";
+    $("metric-channel-note").textContent = "Not calculated in this run";
+    $("metric-scenario").textContent = "—";
+    $("metric-scenario-note").textContent = "Not calculated in this run";
+    $("metric-evidence").textContent = "—";
+    $("metric-evidence-note").textContent = "Not evaluated in this run";
+    $("stage-table").innerHTML = '<tr><td colspan="4">Not calculated in this run.</td></tr>';
+    $("channel-table").innerHTML = '<tr><td colspan="4">Not calculated in this run.</td></tr>';
   }
 
   function updateProcessFlow(payload) {
@@ -798,6 +818,9 @@
         body: JSON.stringify({ question, profile_id: profile || null })
       });
       const payload = await readJson(response);
+      const trace = payload.tool_trace || [];
+      const stateOnlyFollowup = !trace.length && Boolean(payload.parent_response_id);
+      if (!stateOnlyFollowup) resetEvidenceVisuals();
       updateProcessFlow(payload);
       updateMetricCards(payload);
       updateEvidenceTables(payload);
