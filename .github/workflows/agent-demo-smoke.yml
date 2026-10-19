@@ -84,7 +84,7 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{"question":"What evidence would I need before claiming the Marketplace promotional review caused the slowdown?"}' \
             > /tmp/session-followup.json
-          python -c 'import json; a=json.load(open("/tmp/session-first.json")); b=json.load(open("/tmp/session-followup.json")); assert a["session"]["session_id"]=="demo-smoke"; assert b["parent_response_id"]==a["response_id"]; assert "causal" in b["answer"].lower() or "proof" in b["answer"].lower(); print("Stateful follow-up path passed.")'
+          python -c 'import json; a=json.load(open("/tmp/session-first.json")); b=json.load(open("/tmp/session-followup.json")); assert a["session"]["session_id"]=="demo-smoke"; assert b["parent_response_id"]==a["response_id"]; assert b["tool_call_count"]==0; assert "stateful follow-up" in b["answer"].lower(); assert "Marketplace" in b["answer"]; assert "Timing alone is not proof" in b["answer"]; print("Stateful follow-up reused prior investigation evidence.")'
 
       - name: Upload demo smoke artifact
         if: always()
