@@ -81,6 +81,7 @@ The system can quantify a transparent stage-improvement assumption.
 - Scenario math runs in deterministic Python.
 - Reduction percentages are bounded from 0% to 100%.
 - Baseline, scenario value, days saved, and percent improvement are returned.
+- The demo UI allows a bounded custom Order → Ship reduction from 0–100%.
 - Output states that the reduction is an assumption rather than a guaranteed intervention effect.
 
 ### FR-06 — Approval boundary
