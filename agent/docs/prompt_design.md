@@ -136,3 +136,16 @@ This is useful during a presentation because the reviewer can inspect the actual
 A concise explanation:
 
 > I used a compact system prompt to define the analyst role, evidence standards, causal guardrails, deterministic-tool requirements, and human-approval boundary. I moved most business semantics into narrow tool descriptions and strict schemas. That lets the user ask a natural-language business question without giving the model unrestricted SQL or asking it to invent numerical analysis.
+
+
+## Workflow v1 vs Agent v1
+
+The repository intentionally keeps a deterministic baseline:
+
+`POST /workflow/investigate`
+
+Workflow v1 always follows the same sequence: total-cycle comparison, stage comparison, then an illustrative 20% scenario on the stage that deteriorated most.
+
+Agent v1 differs by choosing among bounded tools based on the question and prior tool results. In the main demo, the additional decisions are to drill down by sales channel and retrieve the Marketplace process-change context before interpreting the scenario.
+
+This comparison helps distinguish **workflow automation** from **agentic next-step selection** without claiming that every part of the system must be agentic.
