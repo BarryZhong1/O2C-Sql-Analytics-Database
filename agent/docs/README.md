@@ -7,7 +7,8 @@ Start here if you are reviewing the AI Process Improvement & Scenario Planning A
 ### I want to run or understand the application
 
 1. `user_manual.md`
-2. `demo_quickstart.md`
+2. `github_deployment.md`
+3. `demo_quickstart.md`
 2. `demo_script.md`
 3. `sample_demo_output.md`
 
@@ -53,6 +54,7 @@ Start here if you are reviewing the AI Process Improvement & Scenario Planning A
 | `demo_script.md` | five-minute narrated demo flow |
 | `deployment.md` | Docker/FastAPI deployment guidance |
 | `final_report_template.md` | result-gated template for optional real-model evidence |
+| `github_deployment.md` | Codespaces, Pages, and local deployment guide |
 | `live_eval_runbook.md` | optional real OpenAI evaluation procedure |
 | `memory_design.md` | session state and bounded preferences design |
 | `mock_evaluation_report.md` | current seven-case free integration evidence |
