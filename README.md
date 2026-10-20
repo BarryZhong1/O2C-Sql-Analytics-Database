@@ -42,7 +42,7 @@ This branch extends the SQL project into a deployable business-analysis agent wi
 
 #### One-click GitHub Codespaces — full FastAPI + MySQL application
 
-[Open the full demo in GitHub Codespaces](https://codespaces.new/BarryZhong1/O2C-Sql-Analytics-Database?ref=feature/process-improvement-agent)
+[Open the full demo in GitHub Codespaces](https://codespaces.new/BarryZhong1/O2C-Sql-Analytics-Database/tree/main)
 
 The Codespace automatically provisions Docker/Python, loads Scenario V1, starts MySQL + FastAPI, forwards port 8000, and opens the analyst UI. No OpenAI API key is required in the default mock mode.
 
@@ -69,7 +69,8 @@ make demo-open
 Equivalent direct command:
 
 ```bash
-git checkout feature/process-improvement-agent
+git checkout main
+git pull
 bash agent/scripts/start_demo.sh --open
 ```
 
