@@ -1,10 +1,31 @@
 {
-  "name": "MySQL O2C",
-  "features": { "ghcr.io/devcontainers/features/docker-in-docker:2": {} },
-  "postCreateCommand": "docker compose up -d",
-  "forwardPorts": [3306, 8080],
+  "name": "O2C AI Process Improvement Agent",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12"
+    }
+  },
+  "forwardPorts": [8000],
   "portsAttributes": {
-    "8080": { "label": "Adminer" },
-    "3306": { "label": "MySQL" }
+    "8000": {
+      "label": "O2C Process Improvement Agent",
+      "onAutoForward": "openBrowser",
+      "protocol": "http"
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/bootstrap.sh --clean",
+  "postStartCommand": "bash .devcontainer/bootstrap.sh",
+  "remoteEnv": {
+    "MODEL_BACKEND": "mock"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-azuretools.vscode-docker"
+      ]
+    }
   }
 }
