@@ -1,0 +1,62 @@
+name: Deploy static portfolio demo to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "site/**"
+      - ".github/workflows/pages.yml"
+  pull_request:
+    paths:
+      - "site/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate static site
+        run: |
+          test -f site/index.html
+          grep -q "O2C Process Improvement Agent" site/index.html
+          grep -q "Static GitHub Pages preview" site/index.html
+          python - <<'PY'
+          import re
+          html = open("site/index.html", encoding="utf-8").read()
+          script = re.search(r"<script>(.*)</script>", html, re.S)
+          assert script, "inline script missing"
+          open("/tmp/site.js", "w", encoding="utf-8").write(script.group(1))
+          PY
+          node --check /tmp/site.js
+
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
