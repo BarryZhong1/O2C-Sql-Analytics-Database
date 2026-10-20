@@ -8,10 +8,10 @@ MODE="${1:-}"
 
 echo "[codespace] Preparing O2C portfolio demo..."
 
-echo "[codespace] Waiting for the nested Docker daemon..."
+echo "[codespace] Waiting for Docker access..."
 for attempt in {1..60}; do
   if docker info >/dev/null 2>&1; then
-    echo "[codespace] Docker daemon is ready."
+    echo "[codespace] Docker is ready."
     break
   fi
   if [[ "$attempt" -eq 60 ]]; then
