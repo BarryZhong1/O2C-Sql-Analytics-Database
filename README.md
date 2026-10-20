@@ -24,8 +24,8 @@ This project provides a complete Order-to-Cash (O2C) database system that tracks
 | Demo mode | Free scripted mock by default; optional OpenAI Responses API backend |
 | Deployment | Docker Compose |
 
-![Portfolio demo smoke test](https://github.com/BarryZhong1/O2C-Sql-Analytics-Database/actions/workflows/agent-demo-smoke.yml/badge.svg?branch=feature/process-improvement-agent)
-![Agent unit tests](https://github.com/BarryZhong1/O2C-Sql-Analytics-Database/actions/workflows/agent-unit-tests.yml/badge.svg?branch=feature/process-improvement-agent)
+![Portfolio demo smoke test](https://github.com/BarryZhong1/O2C-Sql-Analytics-Database/actions/workflows/agent-demo-smoke.yml/badge.svg?branch=main)
+![Agent unit tests](https://github.com/BarryZhong1/O2C-Sql-Analytics-Database/actions/workflows/agent-unit-tests.yml/badge.svg?branch=main)
 
 This branch extends the SQL project into a deployable business-analysis agent with:
 
@@ -44,7 +44,14 @@ This branch extends the SQL project into a deployable business-analysis agent wi
 
 [Open the full demo in GitHub Codespaces](https://codespaces.new/BarryZhong1/O2C-Sql-Analytics-Database/tree/main)
 
-The Codespace automatically provisions Docker/Python, loads Scenario V1, starts MySQL + FastAPI, forwards port 8000, and opens the analyst UI. No OpenAI API key is required in the default mock mode.
+The Codespace automatically provisions Docker/Python, then **starts MySQL + FastAPI
+and loads Scenario V1 in the background** without blocking your VS Code workspace.
+Port 8000 is forwarded and opens the analyst UI once setup finishes.
+The first run may take several minutes; check progress using
+`tail -f "$HOME/.local/state/o2c-demo/bootstrap.log"` and confirm readiness using
+`bash .devcontainer/wait-for-demo.sh`.
+No OpenAI API key is required in the default mock mode.
+See [Codespaces troubleshooting](agent/docs/github_deployment.md#troubleshooting-codespaces).
 
 #### GitHub Pages — public static portfolio preview
 

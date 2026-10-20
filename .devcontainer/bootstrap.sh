@@ -38,6 +38,14 @@ if [[ "$MODE" == "--clean" ]]; then
   exit 0
 fi
 
+# The first creation has no Compose DB container. Load Scenario V1 once
+# rather than building a half-ready --keep-data demo before resetting it.
+if ! docker compose ps -a -q db | grep -q .; then
+  echo "[codespace] First launch detected; initializing the full demo dataset."
+  bash agent/scripts/start_demo.sh
+  exit 0
+fi
+
 # On a normal Codespaces restart, prefer reusing the persisted Docker volume.
 if bash agent/scripts/start_demo.sh --keep-data; then
   exit 0
