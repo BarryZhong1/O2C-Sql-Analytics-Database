@@ -36,11 +36,11 @@ jobs:
           python - <<'PY'
           import json
           p = json.load(open(".devcontainer/devcontainer.json"))
-          assert p["workspaceFolder"] == "/workspaces/O2C-Sql-Analytics-Database", p
           raw = open(".devcontainer/devcontainer.json").read()
           assert "${localWorkspaceFolder}" not in raw, raw
           assert "workspaceMount" not in p, p
-          print("Codespaces workspace configuration is safe for browser VS Code.")
+          assert "workspaceFolder" not in p, p
+          print("Codespaces will use its native repository workspace mount.")
           PY
 
       - name: Build and start devcontainer
@@ -53,7 +53,10 @@ jobs:
       - name: Verify workspace and Docker inside devcontainer
         run: |
           devcontainer exec --workspace-folder . bash -lc '
-            test "$PWD" = "/workspaces/O2C-Sql-Analytics-Database"
+            case "$PWD" in
+              */O2C-Sql-Analytics-Database) ;;
+              *) echo "Unexpected workspace: $PWD"; exit 1 ;;
+            esac
             test -f README.md
             test -f agent/app/main.py
             docker info >/dev/null
