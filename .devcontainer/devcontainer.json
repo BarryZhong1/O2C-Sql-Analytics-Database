@@ -7,7 +7,6 @@
       "version": "3.12"
     }
   },
-  "workspaceFolder": "/workspaces/O2C-Sql-Analytics-Database",
   "forwardPorts": [8000],
   "portsAttributes": {
     "8000": {
