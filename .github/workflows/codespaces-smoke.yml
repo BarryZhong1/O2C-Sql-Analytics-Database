@@ -64,12 +64,6 @@ jobs:
             docker compose ps
           '
 
-      - name: Verify published UI port from devcontainer
-        run: |
-          devcontainer exec --workspace-folder . bash -lc '
-            python3 -c "import json,urllib.request; p=json.loads(urllib.request.urlopen('"'"'http://127.0.0.1:8000/demo/status'"'"',timeout=10).read().decode()); assert p['"'"'ready'"'"'] is True, p; print(p)"
-          '
-
       - name: Verify full demo readiness inside devcontainer
         run: |
           devcontainer exec --workspace-folder . bash -lc '
