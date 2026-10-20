@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>O2C Process Improvement Agent — Static Portfolio Demo</title>
+<style>
+:root{--bg:#08111f;--panel:#0f172a;--panel2:#111c31;--line:#26354d;--text:#e5edf7;--muted:#94a3b8;--accent:#38bdf8;--good:#4ade80;--warn:#fbbf24;--bad:#f87171}
+*{box-sizing:border-box} body{margin:0;background:linear-gradient(180deg,#06101d,#0b1220 45%,#0b1323);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{max-width:1180px;margin:0 auto;padding:28px 18px 64px}.eyebrow{color:var(--accent);font-weight:800;letter-spacing:.08em;text-transform:uppercase;font-size:12px}.hero{display:grid;grid-template-columns:1.5fr .8fr;gap:18px;align-items:stretch}.card{background:rgba(15,23,42,.92);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 18px 50px rgba(0,0,0,.18)}h1{font-size:clamp(32px,5vw,54px);line-height:1.02;margin:10px 0 14px;max-width:900px}h2{font-size:20px;margin:0 0 12px}.lead{color:var(--muted);font-size:17px;line-height:1.6;max-width:820px}.badge{display:inline-block;border:1px solid #155e75;color:#67e8f9;background:#083344;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:700;margin-right:6px}.banner{margin:18px 0;padding:12px 14px;border-radius:12px;background:#172554;border:1px solid #1d4ed8;color:#dbeafe;font-size:13px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px}.metric{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:14px}.metric .label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}.metric .value{font-size:26px;font-weight:850;margin-top:6px}.metric .note{font-size:12px;color:var(--muted);margin-top:4px}.section{margin-top:18px}.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}.process{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.stage{border:1px solid var(--line);border-radius:12px;padding:14px;background:#0b1425}.stage.active{border-color:var(--warn);box-shadow:0 0 0 1px rgba(251,191,36,.2)}.stage small{display:block;color:var(--muted);margin-top:6px}.stage.active small{color:#fde68a}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em}td.num,th.num{text-align:right}.up{color:#fca5a5;font-weight:800}.down{color:#86efac;font-weight:800}.controls{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}.controls input{width:100%;background:#091322;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:11px}.controls button,.btn{border:0;border-radius:10px;padding:11px 14px;background:#0ea5e9;color:white;font-weight:800;cursor:pointer}.btn.secondary{background:#1e293b;border:1px solid #475569}.answer{white-space:pre-wrap;line-height:1.65;background:#091322;border:1px solid var(--line);border-radius:12px;padding:14px;color:#dbeafe}.path{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.path .step{border:1px solid var(--line);background:#0b1425;border-radius:12px;padding:12px}.step b{display:block;margin-bottom:4px}.step small{color:var(--muted)}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.muted{color:var(--muted)}code{background:#07101e;padding:2px 5px;border-radius:5px}
+@media(max-width:800px){.hero,.two,.grid,.process,.path{grid-template-columns:1fr}.controls{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+  <div class="hero">
+    <div class="card">
+      <div class="eyebrow">O2C Analytics + AI Process Improvement</div>
+      <h1>Portfolio Demo</h1>
+      <p class="lead">Investigate an Order-to-Cash slowdown, isolate the strongest operational driver, retrieve business context, and test a transparent improvement scenario.</p>
+      <div>
+        <span class="badge">Static GitHub Pages preview</span>
+        <span class="badge">No API key</span>
+        <span class="badge">Scenario V1</span>
+      </div>
+      <div class="banner"><strong>Important:</strong> this page is a static public portfolio preview using the validated Scenario V1 benchmark. For the full FastAPI + MySQL + tool-trace application, launch the GitHub Codespace or local Docker demo.</div>
+    </div>
+    <div class="card">
+      <h2>Validated benchmark</h2>
+      <p class="muted">The benchmark intentionally keeps Invoice → Payment as the longest absolute stage while Order → Ship is the stage that deteriorates most.</p>
+      <div class="metric"><div class="label">Evidence status</div><div class="value">Hypothesis</div><div class="note">Context supports investigation; causality is not proven</div></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="metric"><div class="label">Q3 O2C cycle</div><div class="value">33.71 d</div><div class="note">Q2: 33.28 d</div></div>
+    <div class="metric"><div class="label">Largest deterioration</div><div class="value">Order → Ship</div><div class="note">1.48 → 2.09 d (+0.61)</div></div>
+    <div class="metric"><div class="label">Strongest channel</div><div class="value">Marketplace</div><div class="note">1.45 → 4.62 d (+3.17)</div></div>
+    <div class="metric"><div class="label">Default scenario</div><div class="value" id="saved">0.52 d</div><div class="note" id="savedNote">25% Order → Ship assumption</div></div>
+  </div>
+
+  <div class="card section">
+    <h2>O2C process</h2>
+    <div class="process">
+      <div class="stage active"><strong>Order → Ship</strong><small>1.48 → 2.09 d (+0.61)</small></div>
+      <div class="stage"><strong>Ship → Invoice</strong><small>1.00 → 1.00 d (0.00)</small></div>
+      <div class="stage"><strong>Invoice → Payment</strong><small>30.76 → 30.49 d (-0.27)</small></div>
+    </div>
+  </div>
+
+  <div class="two section">
+    <div class="card">
+      <h2>Stage evidence</h2>
+      <table><thead><tr><th>Stage</th><th class="num">Q2</th><th class="num">Q3</th><th class="num">Δ</th></tr></thead>
+      <tbody>
+        <tr><td>Order → Ship</td><td class="num">1.48</td><td class="num">2.09</td><td class="num up">+0.61</td></tr>
+        <tr><td>Ship → Invoice</td><td class="num">1.00</td><td class="num">1.00</td><td class="num">0.00</td></tr>
+        <tr><td>Invoice → Payment</td><td class="num">30.76</td><td class="num">30.49</td><td class="num down">-0.27</td></tr>
+      </tbody></table>
+    </div>
+    <div class="card">
+      <h2>Channel evidence</h2>
+      <table><thead><tr><th>Channel</th><th class="num">Q2</th><th class="num">Q3</th><th class="num">Δ</th></tr></thead>
+      <tbody>
+        <tr><td>Marketplace</td><td class="num">1.45</td><td class="num">4.62</td><td class="num up">+3.17</td></tr>
+        <tr><td>InsideSales</td><td class="num">1.44</td><td class="num">1.47</td><td class="num up">+0.03</td></tr>
+        <tr><td>Web</td><td class="num">1.54</td><td class="num">1.54</td><td class="num">0.00</td></tr>
+      </tbody></table>
+    </div>
+  </div>
+
+  <div class="card section">
+    <h2>Try a custom what-if</h2>
+    <div class="controls">
+      <div><label for="pct" class="muted">Order → Ship reduction assumption (%)</label><input id="pct" type="number" min="0" max="100" value="25" /></div>
+      <button id="run">Calculate scenario</button>
+    </div>
+    <div class="grid">
+      <div class="metric"><div class="label">Baseline modeled cash cycle</div><div class="value">33.58 d</div></div>
+      <div class="metric"><div class="label">Scenario modeled cash cycle</div><div class="value" id="scenario">33.06 d</div></div>
+      <div class="metric"><div class="label">Modeled days saved</div><div class="value" id="days">0.52 d</div></div>
+      <div class="metric"><div class="label">Modeled improvement</div><div class="value" id="improve">1.56%</div></div>
+    </div>
+    <p class="muted">The reduction percentage is a planning assumption, not a guaranteed intervention effect.</p>
+  </div>
+
+  <div class="card section">
+    <h2>Investigation path</h2>
+    <div class="path">
+      <div class="step"><b>1. Compare stages</b><small>Rank period-over-period deterioration</small></div>
+      <div class="step"><b>2. Drill down</b><small>Analyze channel concentration</small></div>
+      <div class="step"><b>3. Retrieve context</b><small>Find process-change evidence</small></div>
+      <div class="step"><b>4. Run scenario</b><small>Calculate transparent impact</small></div>
+    </div>
+  </div>
+
+  <div class="card section">
+    <h2>Sample recommendation</h2>
+    <div class="answer" id="answer">FINDING
+Q3 O2C cycle time worsened versus Q2. Order → Ship deteriorated most, and the increase is concentrated in Marketplace.
+
+BUSINESS CONTEXT
+A manual Marketplace promotional-code review step began July 1, 2024. The timing supports a hypothesis, but it does not prove the change caused the slowdown.
+
+WHAT-IF SCENARIO
+A 25% Order → Ship improvement reduces the modeled cash cycle from 33.58 to 33.06 days, saving about 0.52 days.
+
+NEXT ACTION
+Pilot a targeted Marketplace order-release improvement. Track Order → Ship time, exception/rework rate, SLA attainment, and total O2C cycle time. Review pilot evidence before broad rollout.</div>
+    <div class="actions">
+      <button class="btn secondary" id="copy">Copy main prompt</button>
+      <button class="btn secondary" id="download">Download sample report</button>
+    </div>
+  </div>
+</main>
+<script>
+const BASELINE=33.58, STAGE=2.09;
+function calculate(){
+  const pct=Math.max(0,Math.min(100,Number(document.getElementById('pct').value)||0));
+  const saved=STAGE*pct/100;
+  const scenario=BASELINE-saved;
+  const improve=saved/BASELINE*100;
+  document.getElementById('scenario').textContent=scenario.toFixed(2)+' d';
+  document.getElementById('days').textContent=saved.toFixed(2)+' d';
+  document.getElementById('improve').textContent=improve.toFixed(2)+'%';
+  document.getElementById('saved').textContent=saved.toFixed(2)+' d';
+  document.getElementById('savedNote').textContent=pct.toFixed(0)+'% Order → Ship assumption';
+}
+document.getElementById('run').addEventListener('click',calculate);
+document.getElementById('copy').addEventListener('click',async()=>{
+  const prompt='Investigate why O2C cycle time worsened in Q3 2024 versus Q2 2024. Identify the stage that deteriorated most, drill into the strongest driver, and test a realistic improvement scenario.';
+  await navigator.clipboard.writeText(prompt); document.getElementById('copy').textContent='Copied';
+  setTimeout(()=>document.getElementById('copy').textContent='Copy main prompt',1400);
+});
+document.getElementById('download').addEventListener('click',()=>{
+  const text='# O2C Process Improvement Agent — Static Demo Report\n\n'+document.getElementById('answer').textContent+'\n\nStatic GitHub Pages preview using validated Scenario V1 benchmark.\n';
+  const blob=new Blob([text],{type:'text/markdown'}); const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='o2c-static-demo-report.md'; a.click(); URL.revokeObjectURL(url);
+});
+</script>
+</body>
+</html>
