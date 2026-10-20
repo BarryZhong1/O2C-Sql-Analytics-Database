@@ -8,6 +8,19 @@ MODE="${1:-}"
 
 echo "[codespace] Preparing O2C portfolio demo..."
 
+echo "[codespace] Waiting for the nested Docker daemon..."
+for attempt in {1..60}; do
+  if docker info >/dev/null 2>&1; then
+    echo "[codespace] Docker daemon is ready."
+    break
+  fi
+  if [[ "$attempt" -eq 60 ]]; then
+    echo "[codespace] Docker daemon did not become ready in time."
+    exit 1
+  fi
+  sleep 2
+done
+
 if curl --fail --silent http://localhost:8000/demo/status >/tmp/o2c-codespace-status.json 2>/dev/null; then
   if python3 - <<'PY'
 import json
