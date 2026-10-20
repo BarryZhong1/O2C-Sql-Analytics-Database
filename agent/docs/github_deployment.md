@@ -25,7 +25,7 @@ The default backend remains `MODEL_BACKEND=mock`, so no OpenAI API key is requir
 Open:
 
 ```text
-https://codespaces.new/BarryZhong1/O2C-Sql-Analytics-Database?ref=feature/process-improvement-agent
+https://codespaces.new/BarryZhong1/O2C-Sql-Analytics-Database/tree/main
 ```
 
 Then choose **Create codespace**.
@@ -103,7 +103,7 @@ validates the static UI in pull requests and deploys `site/` after the workflow 
 
 ### One-time GitHub setting
 
-After this feature branch is merged to `main`:
+Now that the feature has been merged to `main`:
 
 1. open the GitHub repository;
 2. go to **Settings**;
