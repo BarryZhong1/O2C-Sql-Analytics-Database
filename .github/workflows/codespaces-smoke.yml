@@ -31,6 +31,18 @@ jobs:
       - name: Install Dev Container CLI
         run: npm install -g @devcontainers/cli
 
+      - name: Validate Codespaces workspace configuration
+        run: |
+          python - <<'PY'
+          import json
+          p = json.load(open(".devcontainer/devcontainer.json"))
+          assert p["workspaceFolder"] == "/workspaces/O2C-Sql-Analytics-Database", p
+          raw = open(".devcontainer/devcontainer.json").read()
+          assert "${localWorkspaceFolder}" not in raw, raw
+          assert "workspaceMount" not in p, p
+          print("Codespaces workspace configuration is safe for browser VS Code.")
+          PY
+
       - name: Build and start devcontainer
         run: |
           devcontainer up \
