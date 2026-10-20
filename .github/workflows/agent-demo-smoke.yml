@@ -30,8 +30,12 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Validate launcher syntax
-        run: bash -n agent/scripts/start_demo.sh
+      - name: Validate launcher and Codespaces configuration
+        run: |
+          bash -n agent/scripts/start_demo.sh
+          bash -n .devcontainer/bootstrap.sh
+          python -m json.tool .devcontainer/devcontainer.json > /dev/null
+          python -c 'import json; p=json.load(open(".devcontainer/devcontainer.json")); assert 8000 in p["forwardPorts"]; assert p["remoteEnv"]["MODEL_BACKEND"]=="mock"; assert "bootstrap.sh" in p["postCreateCommand"]'
 
       - name: Validate convenience commands
         run: |
