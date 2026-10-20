@@ -49,19 +49,16 @@ jobs:
       - name: Verify full demo readiness inside devcontainer
         run: |
           devcontainer exec --workspace-folder . bash -lc '
-            curl --fail --silent http://localhost:8000/demo/status > /tmp/status.json
-            python3 -c "import json; p=json.load(open('/tmp/status.json')); assert p['ready'] is True, p; assert p['model_backend']=='mock', p; assert p['app_version']=='0.5.0', p; assert p['database']['order_count']>0, p; assert p['scenario']['applied'] is True, p; print(p)"
+            docker compose exec -T agent python -c "import urllib.request; print(urllib.request.urlopen('"'"'http://127.0.0.1:8000/demo/status'"'"', timeout=5).read().decode())" > /tmp/status.json
+            python3 -c "import json; p=json.load(open('"'"'/tmp/status.json'"'"')); assert p['"'"'ready'"'"'] is True, p; assert p['"'"'model_backend'"'"']=='"'"'mock'"'"', p; assert p['"'"'app_version'"'"']=='"'"'0.5.0'"'"', p; assert p['"'"'database'"'"']['"'"'order_count'"'"']>0, p; assert p['"'"'scenario'"'"']['"'"'applied'"'"'] is True, p; print(p)"
           '
 
       - name: Verify main agent investigation inside devcontainer
         run: |
           devcontainer exec --workspace-folder . bash -lc '
-            curl --fail --silent \
-              -X POST http://localhost:8000/agent/ask \
-              -H "Content-Type: application/json" \
-              -d '"'"'{"question":"Investigate why O2C cycle time worsened in Q3 2024 versus Q2 2024. Identify the stage that deteriorated most, drill into the strongest driver, and test a realistic improvement scenario."}'"'"' \
-              > /tmp/response.json
-            python3 agent/scripts/verify_demo_response.py /tmp/response.json
+            docker compose exec -T agent python scripts/run_demo_cli.py --url http://127.0.0.1:8000 --output /tmp/codespaces-response.json > /tmp/codespaces-cli.txt
+            docker compose exec -T agent python scripts/verify_demo_response.py /tmp/codespaces-response.json
+            grep -q "Marketplace" /tmp/codespaces-cli.txt
           '
 
       - name: Show devcontainer logs on failure
