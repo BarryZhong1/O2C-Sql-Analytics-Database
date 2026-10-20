@@ -32,7 +32,7 @@ Then choose **Create codespace**.
 
 The `.devcontainer/devcontainer.json` configuration automatically:
 
-1. provisions Docker-in-Docker;
+1. provisions Docker CLI access to the Codespaces host daemon;
 2. forwards port 8000;
 3. runs `.devcontainer/bootstrap.sh`;
 4. rebuilds the controlled Scenario V1 dataset on first creation;
@@ -199,7 +199,7 @@ Codespace VM
   +-- persistent Docker volumes
 ```
 
-The browser connects to GitHub's forwarded port; the FastAPI app continues to use the Docker-in-Docker Compose stack inside the codespace.
+The browser connects to GitHub's forwarded port; the FastAPI app runs through Docker Compose using the Codespaces host Docker daemon from inside the devcontainer.
 
 ---
 
