@@ -43,6 +43,17 @@ If the browser does not open automatically, use the **Ports** tab and open the f
 
 > O2C Process Improvement Agent
 
+### Temporarily share the full Codespaces UI
+
+If you want another person to open the running full demo while your codespace is active:
+
+1. open the **Ports** tab in Codespaces;
+2. find port **8000**;
+3. change **Port Visibility** to **Public** if your GitHub/account policy allows it;
+4. copy the forwarded URL.
+
+Treat this as temporary demonstration hosting. The URL works only while the codespace/forwarded port remains available.
+
 ### Restart behavior
 
 On normal Codespaces restarts, the bootstrap script tries to reuse the existing Docker volumes. If the stored demo data is invalid or missing, it automatically rebuilds the controlled dataset.
