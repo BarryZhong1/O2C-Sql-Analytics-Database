@@ -1,0 +1,84 @@
+name: Codespaces / devcontainer smoke test
+
+on:
+  pull_request:
+    paths:
+      - ".devcontainer/**"
+      - "agent/**"
+      - "sql/**"
+      - "docker-compose.yml"
+      - ".github/workflows/codespaces-smoke.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - ".devcontainer/**"
+      - "agent/**"
+      - "sql/**"
+      - "docker-compose.yml"
+      - ".github/workflows/codespaces-smoke.yml"
+  workflow_dispatch:
+
+jobs:
+  codespaces-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Dev Container CLI
+        run: npm install -g @devcontainers/cli
+
+      - name: Build and start devcontainer
+        run: |
+          devcontainer up \
+            --workspace-folder . \
+            --log-level info \
+            | tee /tmp/devcontainer-up.json
+
+      - name: Verify Docker inside devcontainer
+        run: |
+          devcontainer exec --workspace-folder . bash -lc '
+            docker info >/dev/null
+            docker compose version
+            docker compose ps
+          '
+
+      - name: Verify full demo readiness inside devcontainer
+        run: |
+          devcontainer exec --workspace-folder . bash -lc '
+            curl --fail --silent http://localhost:8000/demo/status > /tmp/status.json
+            python3 - <<'"'"'PY'"'"'
+import json
+p=json.load(open("/tmp/status.json"))
+assert p["ready"] is True, p
+assert p["model_backend"] == "mock", p
+assert p["app_version"] == "0.5.0", p
+assert p["database"]["order_count"] > 0, p
+assert p["scenario"]["applied"] is True, p
+print(p)
+PY
+          '
+
+      - name: Verify main agent investigation inside devcontainer
+        run: |
+          devcontainer exec --workspace-folder . bash -lc '
+            curl --fail --silent \
+              -X POST http://localhost:8000/agent/ask \
+              -H "Content-Type: application/json" \
+              -d '"'"'{"question":"Investigate why O2C cycle time worsened in Q3 2024 versus Q2 2024. Identify the stage that deteriorated most, drill into the strongest driver, and test a realistic improvement scenario."}'"'"' \
+              > /tmp/response.json
+            python3 agent/scripts/verify_demo_response.py /tmp/response.json
+          '
+
+      - name: Show devcontainer logs on failure
+        if: failure()
+        run: |
+          devcontainer exec --workspace-folder . bash -lc 'docker compose logs db agent' || true
+
+      - name: Stop nested demo services
+        if: always()
+        run: |
+          devcontainer exec --workspace-folder . bash -lc 'docker compose down -v --remove-orphans' || true
