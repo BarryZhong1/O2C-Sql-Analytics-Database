@@ -101,7 +101,7 @@ fi
 
 echo "Waiting for the agent API..."
 for attempt in {1..60}; do
-  if curl --fail --silent http://localhost:8000/health >/tmp/o2c-agent-health.json 2>/dev/null; then
+  if docker compose exec -T agent python -c 'import urllib.request; print(urllib.request.urlopen("http://127.0.0.1:8000/health", timeout=3).read().decode())' >/tmp/o2c-agent-health.json 2>/dev/null; then
     break
   fi
   if [[ "$attempt" -eq 60 ]]; then
@@ -113,7 +113,7 @@ for attempt in {1..60}; do
 done
 
 echo "Checking demo readiness..."
-if ! curl --fail --silent http://localhost:8000/demo/status >/tmp/o2c-demo-status.json; then
+if ! docker compose exec -T agent python -c 'import urllib.request; print(urllib.request.urlopen("http://127.0.0.1:8000/demo/status", timeout=5).read().decode())' >/tmp/o2c-demo-status.json 2>/dev/null; then
   echo "The API is running, but the demo readiness endpoint failed."
   docker compose logs agent
   exit 1
