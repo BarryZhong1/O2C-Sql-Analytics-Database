@@ -34,10 +34,15 @@ The `.devcontainer/devcontainer.json` configuration automatically:
 
 1. provisions Docker CLI access to the Codespaces host daemon;
 2. forwards port 8000;
-3. runs `.devcontainer/bootstrap.sh`;
-4. rebuilds the controlled Scenario V1 dataset on first creation;
-5. starts the FastAPI + MySQL stack;
+3. opens the repository workspace **without blocking on the database setup**;
+4. starts `.devcontainer/bootstrap.sh` in the background, initializing Scenario V1 on the first creation;
+5. starts the FastAPI + MySQL stack, keeping Docker volumes on subsequent starts;
 6. opens the forwarded analyst UI when port 8000 becomes available.
+
+**Why async startup?** The first MySQL seed and container image build can take several
+minutes. A blocking `postCreateCommand` previously kept the editor showing
+"Building codespace" until this finished. The new `postStartCommand` launches
+the same demo in the background so you can use the editor while it initializes.
 
 If the browser does not open automatically, use the **Ports** tab and open the forwarded port labeled:
 
@@ -238,9 +243,37 @@ The free default remains `mock`.
 
 # Troubleshooting Codespaces
 
+## Editor says `Opening Remote` or shows `${localWorkspaceFolder}`
+
+That text may appear in VS Code while a remote workspace is still connecting; it
+is **not a path used by the repository**. The devcontainer deliberately uses
+GitHub Codespaces' native workspace mount and does not set `workspaceMount`
+or `workspaceFolder` to a potentially invalid local substitution.
+
+Open the Codespace **in your browser** from GitHub's Codespaces page if the
+desktop VS Code connection stalls. The repository itself should open before
+the MySQL database finishes loading.
+
+After the terminal becomes available:
+
+```bash
+# Watch automatic startup progress
+tail -f "$HOME/.local/state/o2c-demo/bootstrap.log"
+
+# Wait until real MySQL-backed Scenario V1 endpoints are ready
+bash .devcontainer/wait-for-demo.sh 600
+```
+
+If startup fails or never begins, retry manually:
+
+```bash
+bash .devcontainer/start-background.sh
+```
+
 ## The UI does not open
 
-Open the **Ports** panel and look for port 8000.
+Open the **Ports** panel and look for port 8000. It may take several minutes
+for the port to appear on the first build.
 
 ## Port 8000 is not listed
 

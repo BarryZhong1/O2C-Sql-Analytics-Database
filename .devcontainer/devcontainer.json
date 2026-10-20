@@ -7,7 +7,9 @@
       "version": "3.12"
     }
   },
-  "forwardPorts": [8000],
+  "forwardPorts": [
+    8000
+  ],
   "portsAttributes": {
     "8000": {
       "label": "O2C Process Improvement Agent",
@@ -15,8 +17,7 @@
       "protocol": "http"
     }
   },
-  "postCreateCommand": "bash .devcontainer/bootstrap.sh --clean",
-  "postStartCommand": "bash .devcontainer/bootstrap.sh",
+  "postStartCommand": "bash .devcontainer/start-background.sh",
   "remoteEnv": {
     "MODEL_BACKEND": "mock"
   },

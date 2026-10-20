@@ -34,8 +34,10 @@ jobs:
         run: |
           bash -n agent/scripts/start_demo.sh
           bash -n .devcontainer/bootstrap.sh
+          bash -n .devcontainer/start-background.sh
+          bash -n .devcontainer/wait-for-demo.sh
           python -m json.tool .devcontainer/devcontainer.json > /dev/null
-          python -c 'import json; p=json.load(open(".devcontainer/devcontainer.json")); assert 8000 in p["forwardPorts"]; assert p["remoteEnv"]["MODEL_BACKEND"]=="mock"; assert "bootstrap.sh" in p["postCreateCommand"]'
+          python -c 'import json; p=json.load(open(".devcontainer/devcontainer.json")); assert 8000 in p["forwardPorts"]; assert p["remoteEnv"]["MODEL_BACKEND"]=="mock"; assert not p.get("postCreateCommand"); assert p["postStartCommand"]=="bash .devcontainer/start-background.sh"'
 
       - name: Validate convenience commands
         run: |

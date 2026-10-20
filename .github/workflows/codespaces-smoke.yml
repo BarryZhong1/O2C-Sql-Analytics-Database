@@ -40,6 +40,9 @@ jobs:
           assert "${localWorkspaceFolder}" not in raw, raw
           assert "workspaceMount" not in p, p
           assert "workspaceFolder" not in p, p
+          assert not p.get("postCreateCommand"), p
+          assert p["postStartCommand"] == "bash .devcontainer/start-background.sh", p
+          assert "postStartCommand" in p, p
           print("Codespaces will use its native repository workspace mount.")
           PY
 
@@ -64,12 +67,9 @@ jobs:
             docker compose ps
           '
 
-      - name: Verify full demo readiness inside devcontainer
+      - name: Wait for async demo initialization and verify readiness
         run: |
-          devcontainer exec --workspace-folder . bash -lc '
-            docker compose exec -T agent python -c "import urllib.request; print(urllib.request.urlopen('"'"'http://127.0.0.1:8000/demo/status'"'"', timeout=5).read().decode())" > /tmp/status.json
-            python3 -c "import json; p=json.load(open('"'"'/tmp/status.json'"'"')); assert p['"'"'ready'"'"'] is True, p; assert p['"'"'model_backend'"'"']=='"'"'mock'"'"', p; assert p['"'"'app_version'"'"']=='"'"'0.5.0'"'"', p; assert p['"'"'database'"'"']['"'"'order_count'"'"']>0, p; assert p['"'"'scenario'"'"']['"'"'applied'"'"'] is True, p; print(p)"
-          '
+          devcontainer exec --workspace-folder . bash -lc 'bash .devcontainer/wait-for-demo.sh 600'
 
       - name: Verify main agent investigation inside devcontainer
         run: |
@@ -82,6 +82,7 @@ jobs:
       - name: Show devcontainer logs on failure
         if: failure()
         run: |
+          devcontainer exec --workspace-folder . bash -lc 'tail -n 120 "$HOME/.local/state/o2c-demo/bootstrap.log"' || true
           devcontainer exec --workspace-folder . bash -lc 'docker compose logs db agent' || true
 
       - name: Stop nested demo services
