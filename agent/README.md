@@ -260,6 +260,12 @@ Mock outputs are labeled and must not be reported as real-model performance. See
 
 Use `docs/user_manual.md` for the complete end-user and mechanics manual. Use `docs/README.md` as the reviewer-oriented index for business analysis, architecture, evaluation, and demo materials.
 
+## GitHub-hosted demo options
+
+- **GitHub Codespaces:** full FastAPI + MySQL application using `.devcontainer/devcontainer.json`; port 8000 auto-forwards to the browser.
+- **GitHub Pages:** static public Scenario V1 preview from `site/`; deployed by `.github/workflows/pages.yml` after Pages is enabled.
+- See `docs/github_deployment.md` for exact steps and limitations.
+
 ## Demo and final report
 
 Run the zero-cost portfolio demo from the repository root:
