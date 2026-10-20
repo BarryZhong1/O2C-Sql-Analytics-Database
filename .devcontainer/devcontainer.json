@@ -7,8 +7,7 @@
       "version": "3.12"
     }
   },
-  "workspaceFolder": "${localWorkspaceFolder}",
-  "workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind",
+  "workspaceFolder": "/workspaces/O2C-Sql-Analytics-Database",
   "forwardPorts": [8000],
   "portsAttributes": {
     "8000": {
