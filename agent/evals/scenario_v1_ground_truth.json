@@ -1,0 +1,47 @@
+{
+  "scenario_id": "scenario_v1_marketplace_bottleneck",
+  "status": "validated_reproducible",
+  "baseline_period": {
+    "start_date": "2024-04-01",
+    "end_date": "2024-06-30"
+  },
+  "problem_period": {
+    "start_date": "2024-07-01",
+    "end_date": "2024-09-30"
+  },
+  "primary_injection": {
+    "cohort": "40 of 52 Q3 Marketplace orders (76.92%) in the validated deterministic dataset",
+    "effect": "Add 4 days to order-to-ship while shifting downstream timestamps by the same amount",
+    "expected_primary_metric": "order_to_ship_days",
+    "expected_primary_dimension": {
+      "name": "channel",
+      "value": "Marketplace"
+    }
+  },
+  "secondary_injection": {
+    "cohort": "8 Q3 Enterprise paid invoices in the validated deterministic dataset",
+    "effect": "Add 2 days to payment timestamp",
+    "expected_metric": "invoice_to_payment_days",
+    "purpose": "smaller collections-side confounder; it must not dominate the primary fulfillment signal"
+  },
+  "expected_agent_findings": [
+    "Q3 total O2C cycle time is worse than Q2",
+    "order_to_ship_days is the largest period deterioration even though invoice_to_payment_days is much longer in absolute terms",
+    "Marketplace is the strongest affected channel",
+    "the collections-side confounder does not dominate the primary signal",
+    "scenario output is labeled as assumption-based, not causal"
+  ],
+  "forbidden_shortcuts": [
+    "Do not expose this ground-truth file to the agent as retrieval context",
+    "Do not hard-code Marketplace as the investigation answer",
+    "Do not hard-code the preferred tool sequence"
+  ],
+  "validation": {
+    "runs": [
+      37421942102,
+      37422033397
+    ],
+    "repeated_metrics_identical": true,
+    "benchmark_file": "agent/evals/scenario_v1_benchmark.json"
+  }
+}

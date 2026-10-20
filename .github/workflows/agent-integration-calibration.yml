@@ -1,0 +1,87 @@
+name: Agent integration calibration
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/process-improvement-agent
+    paths:
+      - ".github/workflows/agent-integration-calibration.yml"
+      - "agent/data/**"
+      - "agent/sql/**"
+      - "agent/scripts/calibrate_scenario_v1.py"
+      - "agent/app/tools/process_analytics.py"
+      - "sql/complete_setup.sql"
+      - "docker-compose.yml"
+
+jobs:
+  calibrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: agent/requirements.txt
+
+      - name: Install agent dependencies
+        working-directory: agent
+        run: pip install -r requirements.txt
+
+      - name: Start MySQL
+        run: docker compose up -d db
+
+      - name: Wait for MySQL initialization
+        run: |
+          for attempt in {1..60}; do
+            if docker compose exec -T db sh -c 'mysql -h127.0.0.1 -P3306 -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SELECT 1"' >/dev/null 2>&1; then
+              echo "MySQL initialization is complete."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "MySQL did not become ready in time."
+          docker compose logs db
+          exit 1
+
+      - name: Load base O2C dataset
+        run: docker compose exec -T db sh -c 'mysql -h127.0.0.1 -P3306 -uroot -p"$MYSQL_ROOT_PASSWORD"' < sql/complete_setup.sql
+
+      - name: Apply Scenario V1
+        run: docker compose exec -T db sh -c 'mysql -h127.0.0.1 -P3306 -uroot -p"$MYSQL_ROOT_PASSWORD"' < agent/data/scenario_v1_marketplace_bottleneck.sql
+
+      - name: Capture SQL validation output
+        run: |
+          set -o pipefail
+          docker compose exec -T db sh -c 'mysql -h127.0.0.1 -P3306 -uroot -p"$MYSQL_ROOT_PASSWORD"' < agent/sql/validate_scenario_v1.sql \
+            | tee scenario-v1-sql-validation.txt
+
+      - name: Run Scenario V1 calibration
+        working-directory: agent
+        env:
+          DATABASE_URL: mysql+pymysql://app:app_pw@localhost:3306/o2c
+          PYTHONPATH: .
+        run: |
+          set -o pipefail
+          python scripts/calibrate_scenario_v1.py \
+            | tee ../scenario-v1-calibration.json
+
+      - name: Upload calibration artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scenario-v1-calibration
+          path: |
+            scenario-v1-sql-validation.txt
+            scenario-v1-calibration.json
+          if-no-files-found: warn
+
+      - name: Show database logs on failure
+        if: failure()
+        run: docker compose logs db

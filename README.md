@@ -1,12 +1,130 @@
-# Order-to-Cash (O2C) Analytics Database Project
+# Order-to-Cash Analytics + AI Process Improvement Agent
 
-A comprehensive SQL database project modeling a complete Order-to-Cash business process with realistic data for business intelligence and analytics.
+A portfolio project combining a realistic Order-to-Cash analytics database with a bounded AI-assisted process-improvement and scenario-planning system.
 
 ![O2C Process Flow](https://img.shields.io/badge/Process-Order%20to%20Cash-blue) ![Database](https://img.shields.io/badge/Database-MySQL%208.0-orange) ![Records](https://img.shields.io/badge/Dataset-500%2B%20Orders-green)
 
 ## 📋 Project Overview
 
 This project provides a complete Order-to-Cash (O2C) database system that tracks the entire customer transaction lifecycle from order placement through cash collection. It includes realistic sample data and pre-built analytical views for business intelligence.
+
+## 🤖 AI Process Improvement & Scenario Planning Agent
+
+### Project at a glance
+
+| Area | Implementation |
+|---|---|
+| Business problem | Diagnose O2C deterioration and evaluate improvement options |
+| User experience | FastAPI analyst UI + natural-language business questions |
+| Data | MySQL O2C transactional/analytical model |
+| Agent tools | Stage comparison, KPI drill-down, context retrieval, baseline lookup, scenario simulation |
+| Guardrails | Read-only analytics, no free-form SQL, causal-discipline rules, human approval |
+| State | Session lineage + bounded analyst preferences |
+| Evaluation | Controlled Scenario V1, 7 deterministic behavior cases, semantic rubric, CI smoke tests |
+| Demo mode | Free scripted mock by default; optional OpenAI Responses API backend |
+| Deployment | Docker Compose |
+
+![Portfolio demo smoke test](https://github.com/BarryZhong1/O2C-Sql-Analytics-Database/actions/workflows/agent-demo-smoke.yml/badge.svg?branch=feature/process-improvement-agent)
+![Agent unit tests](https://github.com/BarryZhong1/O2C-Sql-Analytics-Database/actions/workflows/agent-unit-tests.yml/badge.svg?branch=feature/process-improvement-agent)
+
+This branch extends the SQL project into a deployable business-analysis agent with:
+
+- FastAPI analyst UI and API;
+- bounded process-analytics tools over MySQL;
+- local business-context retrieval;
+- deterministic Python what-if simulation;
+- short-term session state and bounded analyst preferences;
+- trace/evaluation infrastructure;
+- a **free scripted mock backend** for portfolio demos;
+- an optional OpenAI Responses API backend for later real-model validation.
+
+### Zero-cost portfolio demo
+
+#### One-click GitHub Codespaces — full FastAPI + MySQL application
+
+[Open the full demo in GitHub Codespaces](https://codespaces.new/BarryZhong1/O2C-Sql-Analytics-Database?ref=feature/process-improvement-agent)
+
+The Codespace automatically provisions Docker/Python, loads Scenario V1, starts MySQL + FastAPI, forwards port 8000, and opens the analyst UI. No OpenAI API key is required in the default mock mode.
+
+#### GitHub Pages — public static portfolio preview
+
+The repository also includes a standalone static UI in `site/` and a GitHub Pages deployment workflow. After merge and one-time Pages enablement, the expected public URL is:
+
+```text
+https://barryzhong1.github.io/O2C-Sql-Analytics-Database/
+```
+
+The Pages version is intentionally a static Scenario V1 preview; use Codespaces or local Docker for the live database/tool-trace application.
+
+#### Local Docker
+
+Requirements: Docker Desktop / Docker Compose v2.
+
+Fast path on macOS/Linux:
+
+```bash
+make demo-open
+```
+
+Equivalent direct command:
+
+```bash
+git checkout feature/process-improvement-agent
+bash agent/scripts/start_demo.sh --open
+```
+
+Then open:
+
+```text
+http://localhost:8000/
+```
+
+Click **Full diagnosis** → **Run investigation**.
+
+The demo runs a real four-tool workflow against the synthetic O2C database:
+
+```text
+stage comparison
+    ↓
+channel drill-down
+    ↓
+process-context retrieval
+    ↓
+scenario simulation
+    ↓
+business recommendation
+```
+
+The mock backend scripts the investigation path so the demo costs $0, but the MySQL queries, KPI values, policy retrieval, scenario calculations, FastAPI service, UI, tool trace, and deterministic evaluation are the real project components.
+
+### Agent architecture
+
+```mermaid
+flowchart LR
+    U[Business user] --> UI[FastAPI analyst UI]
+    UI --> M[Model / orchestration boundary]
+    M --> A[Process analytics<br/>MySQL]
+    M --> R[Business context<br/>local retrieval]
+    M --> S[Scenario simulator<br/>Python]
+    A --> D[Evidence-backed recommendation]
+    R --> D
+    S --> D
+    D --> H[Human approval]
+```
+
+The free demo uses a scripted mock only at the model/orchestration boundary. The same business tools remain available to the optional OpenAI Responses API backend.
+
+See [Agent README](agent/README.md), [User & Mechanics Manual](agent/docs/user_manual.md), [GitHub Deployment Guide](agent/docs/github_deployment.md), [Documentation Index](agent/docs/README.md), [Demo Quick Start](agent/docs/demo_quickstart.md), [Prompt & Tool Design](agent/docs/prompt_design.md), [Business Requirements](agent/docs/business_requirements.md), [Process Improvement Case](agent/docs/process_improvement_case.md), and [Demo Interview Q&A](agent/docs/demo_interview_qa.md).
+
+### Validated demo evidence
+
+- controlled Scenario V1 benchmark;
+- **7/7** scripted mock integration cases passed deterministic trace checks;
+- one-command portfolio demo smoke test passes end-to-end;
+- Docker/API/UI smoke tests pass;
+- browser UI includes readiness checks, process-flow highlighting, evidence tables, tool path, stateful follow-up, presentation mode, and Markdown report export.
+
+See [Portfolio MVP Report](agent/docs/portfolio_final_report.md), [Mock Evaluation Report](agent/docs/mock_evaluation_report.md), [Sample Demo Output](agent/docs/sample_demo_output.md), and [Demo One-Pager](agent/docs/demo_one_pager.md).
 
 ### Business Process Coverage
 - **Customer Management**: Customer segmentation, credit limits, payment terms
@@ -147,17 +265,26 @@ LIMIT 10;
 ## 🛠️ Project Structure
 
 ```
-o2c-analytics-project/
+O2C-Sql-Analytics-Database/
+├── agent/
+│   ├── app/               # FastAPI service, agent loop, UI, tools, state
+│   ├── data/              # Controlled Scenario V1 overlay
+│   ├── docs/              # BA, architecture, demo, evaluation artifacts
+│   ├── evals/             # Behavior cases and semantic rubric
+│   ├── policies/          # Local business-context documents
+│   ├── scripts/           # Demo/evaluation/report automation
+│   └── tests/             # Agent unit tests
 ├── sql/
 │   ├── 01-setup/          # Database and table creation
 │   ├── 02-data/           # Data loading and generation
 │   ├── 03-views/          # Business intelligence views
 │   ├── 04-reports/        # Sample analytical queries
 │   └── complete_setup.sql # One-click complete setup
-├── docs/                  # Detailed documentation
-├── tests/                 # Data validation queries
-├── examples/              # Sample dashboard queries
-└── scripts/               # Automation scripts
+├── docs/                  # Original database documentation
+├── examples/              # Sample analytics queries
+├── docker-compose.yml     # MySQL + agent local stack
+├── Makefile               # Demo/test shortcuts
+└── README.md
 ```
 
 ## 💼 Use Cases

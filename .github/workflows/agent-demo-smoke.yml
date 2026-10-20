@@ -1,0 +1,151 @@
+name: Portfolio demo smoke test
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "agent/**"
+      - "sql/**"
+      - "docker-compose.yml"
+      - ".github/workflows/agent-demo-smoke.yml"
+  pull_request:
+    paths:
+      - "agent/**"
+      - "sql/**"
+      - "docker-compose.yml"
+      - ".github/workflows/agent-demo-smoke.yml"
+
+jobs:
+  demo-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate launcher and Codespaces configuration
+        run: |
+          bash -n agent/scripts/start_demo.sh
+          bash -n .devcontainer/bootstrap.sh
+          python -m json.tool .devcontainer/devcontainer.json > /dev/null
+          python -c 'import json; p=json.load(open(".devcontainer/devcontainer.json")); assert 8000 in p["forwardPorts"]; assert p["remoteEnv"]["MODEL_BACKEND"]=="mock"; assert "bootstrap.sh" in p["postCreateCommand"]'
+
+      - name: Validate convenience commands
+        run: |
+          make help | grep -q "make demo-open"
+          make compose-check >/dev/null
+
+      - name: Start demo using the documented one-command launcher
+        env:
+          MODEL_BACKEND: mock
+        run: bash agent/scripts/start_demo.sh
+
+      - name: Verify demo readiness and analyst UI
+        run: |
+          curl --fail --silent http://localhost:8000/demo/status > /tmp/demo-status.json
+          python -c 'import json; p=json.load(open("/tmp/demo-status.json")); assert p["ready"] is True; assert p["database"]["order_count"] > 0; assert p["scenario"]["applied"] is True; assert p["model_backend"] == "mock"; assert p["app_version"] == "0.5.0"; print(p["benchmark"])'
+          curl --fail --silent http://localhost:8000/demo/design > /tmp/demo-design.json
+          mkdir -p agent/artifacts
+          cp /tmp/demo-design.json agent/artifacts/demo_design.json
+          python -c 'import json; p=json.load(open("/tmp/demo-design.json")); assert len(p["instruction_rules"]) >= 10; assert len(p["tools"]) == 5; assert p["system_prompt_version"]; assert p["tool_catalog_version"]; assert "Never invent KPI values" in p["full_system_prompt"]; print(p["system_prompt_version"], p["tool_catalog_version"])'
+          curl --fail --silent http://localhost:8000/ > /tmp/demo-index.html
+          grep -q "Full diagnosis" /tmp/demo-index.html
+          grep -q "Demo status" /tmp/demo-index.html
+          grep -q "Download Markdown report" /tmp/demo-index.html
+          grep -q "Download raw JSON" /tmp/demo-index.html
+          grep -q "Investigation path" /tmp/demo-index.html
+          grep -q "Presentation mode" /tmp/demo-index.html
+          grep -q "Custom Order" /tmp/demo-index.html
+          grep -q "Evidence status" /tmp/demo-index.html
+          grep -q "Inspect agent instructions & tool catalog" /tmp/demo-index.html
+          grep -q "Workflow v1 baseline" /tmp/demo-index.html
+          grep -q "process-flow" /tmp/demo-index.html
+          python -c 'import re; s=open("/tmp/demo-index.html").read(); m=re.search(r"<script>(.*)</script>", s, re.S); assert m; open("/tmp/demo-ui.js","w").write(m.group(1))'
+          node --check /tmp/demo-ui.js
+
+      - name: Verify fixed Workflow v1 baseline
+        run: |
+          curl --fail --silent \
+            -X POST http://localhost:8000/workflow/investigate \
+            -H "Content-Type: application/json" \
+            -d '{"start_date":"2024-07-01","end_date":"2024-09-30","compare_start_date":"2024-04-01","compare_end_date":"2024-06-30"}' \
+            > /tmp/workflow-baseline.json
+          python -c 'import json; p=json.load(open("/tmp/workflow-baseline.json")); assert p["workflow"]=="fixed_cycle_time_investigation_v1"; assert p["candidate_bottleneck"]=="order_to_ship_days"; assert p["illustrative_scenario"]["scenario"]["days_saved"] > 0; assert "does not autonomously choose" in p["note"]; print(p["candidate_bottleneck"], p["illustrative_scenario"]["scenario"])'
+
+      - name: Run and verify the main portfolio demo
+        run: |
+          mkdir -p agent/artifacts
+          curl --fail --silent \
+            -X POST http://localhost:8000/agent/ask \
+            -H "Content-Type: application/json" \
+            -d '{"question":"Investigate why O2C cycle time worsened in Q3 2024 versus Q2 2024. Identify the stage that deteriorated most, drill into the strongest driver, and test a realistic improvement scenario."}' \
+            > agent/artifacts/demo_smoke_response.json
+          python agent/scripts/verify_demo_response.py agent/artifacts/demo_smoke_response.json
+
+      - name: Build portable Markdown demo report
+        run: |
+          python agent/scripts/build_demo_report.py \
+            --response agent/artifacts/demo_smoke_response.json \
+            --design agent/artifacts/demo_design.json \
+            --output agent/artifacts/demo_report.md
+          grep -q "## KPI summary" agent/artifacts/demo_report.md
+          grep -q "Marketplace" agent/artifacts/demo_report.md
+          grep -q "System prompt" agent/artifacts/demo_report.md
+          grep -q "human approval" agent/artifacts/demo_report.md
+
+      - name: Verify custom scenario assumption
+        run: |
+          curl --fail --silent \
+            -X POST http://localhost:8000/agent/ask \
+            -H "Content-Type: application/json" \
+            -d '{"question":"What if Q3 2024 order-to-ship time were reduced by 10%? What happens to the modeled cash cycle?"}' \
+            > /tmp/custom-scenario.json
+          python -c 'import json; p=json.load(open("/tmp/custom-scenario.json")); assert p["tool_call_count"]==1; t=p["tool_trace"][0]; assert t["tool"]=="simulate_stage_improvement"; assert t["arguments"]["order_to_ship_reduction_pct"]==10; assert abs(t["result"]["scenario"]["days_saved"]-0.21)<0.02; print(t["result"]["scenario"])'
+
+      - name: Verify terminal fallback demo
+        run: |
+          python agent/scripts/run_demo_cli.py --output agent/artifacts/demo_cli_response.json > /tmp/demo-cli.txt
+          grep -q "O2C PROCESS IMPROVEMENT AGENT" /tmp/demo-cli.txt
+          grep -q "compare_stage_performance" /tmp/demo-cli.txt
+          grep -q "Marketplace" /tmp/demo-cli.txt
+
+      - name: Verify stateful follow-up path
+        run: |
+          curl --fail --silent \
+            -X POST http://localhost:8000/agent/session/demo-smoke/ask \
+            -H "Content-Type: application/json" \
+            -d '{"question":"Investigate why O2C cycle time worsened in Q3 2024 versus Q2 2024. Identify the stage that deteriorated most, drill into the strongest driver, and test a realistic improvement scenario."}' \
+            > /tmp/session-first.json
+          curl --fail --silent \
+            -X POST http://localhost:8000/agent/session/demo-smoke/ask \
+            -H "Content-Type: application/json" \
+            -d '{"question":"What evidence would I need before claiming the Marketplace promotional review caused the slowdown?"}' \
+            > /tmp/session-followup.json
+          python -c 'import json; a=json.load(open("/tmp/session-first.json")); b=json.load(open("/tmp/session-followup.json")); assert a["session"]["session_id"]=="demo-smoke"; assert b["parent_response_id"]==a["response_id"]; assert b["tool_call_count"]==0; assert "stateful follow-up" in b["answer"].lower(); assert "Marketplace" in b["answer"]; assert "Timing alone is not proof" in b["answer"]; print("Stateful follow-up reused prior investigation evidence.")'
+
+      - name: Upload demo smoke artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portfolio-demo-smoke-${{ github.run_number }}
+          path: |
+            agent/artifacts/demo_smoke_response.json
+            agent/artifacts/demo_cli_response.json
+            agent/artifacts/demo_design.json
+            agent/artifacts/demo_report.md
+          if-no-files-found: warn
+
+      - name: Show service logs on failure
+        if: failure()
+        run: docker compose logs db agent
+
+      - name: Shut down demo
+        if: always()
+        run: docker compose down -v --remove-orphans

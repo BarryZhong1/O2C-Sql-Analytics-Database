@@ -1,0 +1,883 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>O2C Process Improvement Agent</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0b1020;
+      --panel: #131a2b;
+      --panel-2: #1a2237;
+      --text: #f3f5f8;
+      --muted: #aeb8cc;
+      --line: #2a3653;
+      --accent: #7dd3fc;
+      --good: #86efac;
+      --bad: #fca5a5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(180deg, #09101e 0%, var(--bg) 100%);
+      color: var(--text);
+    }
+    main { max-width: 1100px; margin: 0 auto; padding: 36px 20px 64px; }
+    h1 { margin: 0 0 8px; font-size: clamp(28px, 5vw, 42px); }
+    h2 { margin-top: 0; font-size: 18px; }
+    p { color: var(--muted); line-height: 1.55; }
+    .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 18px; }
+    .card {
+      background: rgba(19, 26, 43, .94);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 14px 40px rgba(0, 0, 0, .2);
+    }
+    label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 6px; }
+    input, textarea, select, button {
+      width: 100%;
+      font: inherit;
+      border-radius: 9px;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 10px 12px;
+    }
+    textarea { min-height: 150px; resize: vertical; line-height: 1.45; }
+    button {
+      cursor: pointer;
+      background: #164e63;
+      border-color: #0e7490;
+      font-weight: 700;
+      margin-top: 14px;
+    }
+    button:hover { filter: brightness(1.12); }
+    button:disabled { cursor: wait; opacity: .65; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .checks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+    .check { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+    .check input { width: auto; }
+    #status { min-height: 20px; margin-top: 10px; font-size: 13px; color: var(--muted); }
+    #status.good { color: var(--good); }
+    #status.bad { color: var(--bad); }
+    .process-flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 0 0 14px; }
+    .process-stage { position: relative; background: #0f172a; border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+    .process-stage.active { border-color: #f59e0b; box-shadow: 0 0 0 1px rgba(245, 158, 11, .25); }
+    .process-stage .stage-title { font-weight: 800; }
+    .process-stage .stage-change { margin-top: 4px; font-size: 12px; color: var(--muted); }
+    .process-stage.active .stage-change { color: #fbbf24; }
+    .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 10px; margin-bottom: 14px; }
+    .metric-card { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+    .metric-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+    .metric-value { font-size: 22px; font-weight: 800; margin-top: 5px; }
+    .metric-note { color: var(--muted); font-size: 11px; margin-top: 4px; }
+    #answer {
+      line-height: 1.6;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px;
+      min-height: 120px;
+    }
+    .answer-heading { margin: 14px 0 5px; font-size: 13px; letter-spacing: .05em; color: var(--accent); }
+    .answer-line { margin: 3px 0; color: var(--text); }
+    .answer-bullet { margin: 3px 0 3px 16px; color: var(--text); }
+    details { margin-top: 14px; }
+    summary { cursor: pointer; color: var(--accent); }
+    pre {
+      overflow: auto;
+      background: #080d18;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      padding: 12px;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .tag { display: inline-block; color: var(--accent); border: 1px solid #155e75; border-radius: 999px; padding: 4px 9px; font-size: 12px; margin-right: 6px; }
+    .backend-banner { margin: 14px 0 18px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel-2); color: var(--muted); font-size: 13px; }
+    .backend-banner strong { color: var(--text); }
+    .presets { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin: 10px 0 4px; }
+    .preset { margin: 0; padding: 8px; font-size: 12px; background: #1e3a5f; border-color: #31577f; }
+    .readiness { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 12px 0 18px; }
+    .arch-flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 0 0 18px; }
+    .arch-node { border: 1px solid var(--line); background: #0f172a; border-radius: 10px; padding: 10px; text-align: center; font-size: 12px; font-weight: 700; }
+    .arch-node small { display: block; margin-top: 4px; color: var(--muted); font-weight: 400; line-height: 1.35; }
+    .ready-item { border: 1px solid var(--line); background: var(--panel-2); border-radius: 10px; padding: 10px 12px; }
+    .ready-item .label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+    .ready-item .value { margin-top: 5px; font-weight: 700; }
+    .ready-dot { display: inline-block; width: 9px; height: 9px; border-radius: 999px; margin-right: 6px; background: #64748b; }
+    .ready-dot.good { background: var(--good); }
+    .ready-dot.bad { background: var(--bad); }
+    .tool-path { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin: 10px 0 14px; }
+    .tool-step { border: 1px solid var(--line); background: #0f172a; border-radius: 10px; padding: 10px 12px; }
+    .tool-step .step-no { color: var(--accent); font-size: 11px; font-weight: 800; }
+    .tool-step .step-name { margin-top: 3px; font-weight: 700; font-size: 13px; }
+    .tool-step .step-note { margin-top: 4px; color: var(--muted); font-size: 11px; }
+    .design-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .design-box { border: 1px solid var(--line); background: #0f172a; border-radius: 10px; padding: 12px; }
+    .design-box h3 { margin: 0 0 7px; font-size: 13px; }
+    .design-box ul { margin: 6px 0 0 18px; padding: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .design-meta { color: var(--muted); font-size: 11px; margin-top: 8px; }
+    .evidence-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0 16px; }
+    .evidence-box { border: 1px solid var(--line); background: var(--panel-2); border-radius: 10px; padding: 12px; }
+    .evidence-box h3 { margin: 0 0 8px; font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { text-align: left; padding: 7px 5px; border-bottom: 1px solid var(--line); }
+    th { color: var(--muted); font-weight: 600; }
+    td.num, th.num { text-align: right; }
+    tr:last-child td { border-bottom: 0; }
+    .delta-up { color: #fca5a5; font-weight: 700; }
+    .delta-down { color: #86efac; font-weight: 700; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .actions button { width: auto; margin-top: 0; padding: 8px 12px; font-size: 12px; }
+    .secondary { background: #1e293b; border-color: #475569; }
+    .top-actions { display: flex; justify-content: flex-end; margin: 8px 0 2px; }
+    .top-actions button { width: auto; margin: 0; padding: 7px 11px; font-size: 12px; }
+    .top-actions { gap: 8px; align-items: center; }
+    .top-link { display: inline-block; padding: 7px 11px; border: 1px solid #475569; border-radius: 9px; background: #1e293b; color: var(--text); text-decoration: none; font-size: 12px; font-weight: 700; }
+    body.presentation .technical { display: none !important; }
+    body.presentation .grid { grid-template-columns: 1fr; }
+    @media (max-width: 800px) { .grid, .row, .presets, .metric-grid, .readiness, .evidence-grid, .process-flow, .design-grid, .arch-flow { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<main>
+  <span class="tag">Read-only analytics</span>
+  <span class="tag">Scenario planning</span>
+  <span class="tag">Human approval</span>
+  <span class="tag">Mock/OpenAI backend</span>
+  <div class="top-actions"><a class="top-link technical" href="/docs" target="_blank" rel="noopener">API docs</a><button id="presentation-toggle" class="secondary" type="button">Presentation mode</button></div>
+  <h1>O2C Process Improvement Agent</h1>
+  <p>Investigate process deterioration, drill into business drivers, retrieve operating context, and test transparent what-if scenarios.</p>
+  <div id="backend-banner" class="backend-banner">Checking active model backend...</div>
+  <details class="technical" id="design-panel">
+    <summary>Inspect agent instructions & tool catalog</summary>
+    <div class="design-grid">
+      <div class="design-box">
+        <h3>Instruction rules</h3>
+        <ul id="instruction-rules"><li>Loading...</li></ul>
+        <div class="design-meta" id="prompt-version"></div>
+      </div>
+      <div class="design-box">
+        <h3>Approved tools</h3>
+        <div id="tool-catalog">Loading...</div>
+        <div class="design-meta" id="tool-version"></div>
+      </div>
+    </div>
+    <details style="margin-top:10px">
+      <summary>Show full system prompt</summary>
+      <pre id="system-prompt">Loading...</pre>
+    </details>
+  </details>
+  <div class="readiness">
+    <div class="ready-item"><div class="label">Database</div><div class="value" id="ready-db"><span class="ready-dot"></span>Checking</div></div>
+    <div class="ready-item"><div class="label">Scenario V1</div><div class="value" id="ready-scenario"><span class="ready-dot"></span>Checking</div></div>
+    <div class="ready-item"><div class="label">Backend</div><div class="value" id="ready-backend"><span class="ready-dot"></span>Checking</div></div>
+    <div class="ready-item"><div class="label">Demo status</div><div class="value" id="ready-overall"><span class="ready-dot"></span>Checking</div></div>
+  </div>
+
+  <div class="arch-flow">
+    <div class="arch-node">Business question<small>Natural-language problem</small></div>
+    <div class="arch-node">Model boundary<small>Mock demo / OpenAI optional</small></div>
+    <div class="arch-node">Approved tools<small>SQL • retrieval • Python</small></div>
+    <div class="arch-node">Evidence package<small>Metrics • context • scenario</small></div>
+    <div class="arch-node">Human decision<small>No operational write tools</small></div>
+  </div>
+
+  <div class="grid">
+    <section class="card">
+      <h2>Investigation</h2>
+      <label for="question">Business question</label>
+      <textarea id="question">Investigate why O2C cycle time worsened in Q3 2024 versus Q2 2024. Identify the stage that deteriorated most, drill into the strongest driver, and test a realistic improvement scenario.</textarea>
+      <div class="presets">
+        <button class="preset" data-prompt="full">Full diagnosis</button>
+        <button class="preset" data-prompt="channel">Channel drill-down</button>
+        <button class="preset" data-prompt="scenario">25% what-if</button>
+        <button class="preset" data-prompt="guardrail">Approval guardrail</button>
+        <button class="preset" data-prompt="causal">Causality follow-up</button>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <div>
+          <label for="scenario-pct">Custom Order → Ship improvement assumption (%)</label>
+          <input id="scenario-pct" type="number" min="0" max="100" step="1" value="25" />
+        </div>
+        <div style="display:flex; align-items:end">
+          <button id="set-scenario" class="secondary" type="button" style="margin-top:0">Set custom what-if</button>
+        </div>
+      </div>
+
+      <div class="row technical">
+        <div>
+          <label for="session">Session ID</label>
+          <input id="session" value="demo-1" placeholder="optional" />
+        </div>
+        <div>
+          <label for="profile">Analyst profile ID</label>
+          <input id="profile" value="analyst-demo" placeholder="optional" />
+        </div>
+      </div>
+
+      <label class="check technical"><input id="use-session" type="checkbox" checked /> Continue a stateful investigation session</label>
+      <button id="run">Run investigation</button>
+      <div class="actions">
+        <button id="reset-session" class="secondary technical" type="button">Reset session</button>
+        <button id="run-workflow" class="secondary technical" type="button">Run Workflow v1 baseline</button>
+        <button id="download-report" class="secondary" type="button" disabled>Download Markdown report</button>
+        <button id="download-json" class="secondary" type="button" disabled>Download raw JSON</button>
+      </div>
+      <div id="status"></div>
+    </section>
+
+    <aside class="card technical">
+      <h2>Reporting preferences</h2>
+      <p>Preferences affect presentation and default drill-down style only. They cannot override evidence or approval boundaries.</p>
+      <label for="detail">Detail level</label>
+      <select id="detail">
+        <option value="balanced">Balanced</option>
+        <option value="executive">Executive</option>
+        <option value="detailed">Detailed</option>
+      </select>
+
+      <label for="breakdown">Preferred breakdown</label>
+      <select id="breakdown">
+        <option value="channel">Channel</option>
+        <option value="segment">Customer segment</option>
+        <option value="none">No preference</option>
+      </select>
+
+      <div class="checks">
+        <label class="check"><input id="risks" type="checkbox" checked /> Include risks</label>
+        <label class="check"><input id="scenario" type="checkbox" checked /> Include scenario</label>
+      </div>
+      <button id="save-profile">Save profile preferences</button>
+    </aside>
+  </div>
+
+  <section class="card" style="margin-top:18px">
+    <h2>Investigation result</h2>
+    <div class="process-flow" id="process-flow">
+      <div class="process-stage" data-stage="order_to_ship_days"><div class="stage-title">Order → Ship</div><div class="stage-change">Awaiting analysis</div></div>
+      <div class="process-stage" data-stage="ship_to_invoice_days"><div class="stage-title">Ship → Invoice</div><div class="stage-change">Awaiting analysis</div></div>
+      <div class="process-stage" data-stage="invoice_to_payment_days"><div class="stage-title">Invoice → Payment</div><div class="stage-change">Awaiting analysis</div></div>
+    </div>
+    <div class="metric-grid">
+      <div class="metric-card">
+        <div class="metric-label">Q3 O2C cycle</div>
+        <div class="metric-value" id="metric-cycle">—</div>
+        <div class="metric-note" id="metric-cycle-note">Run Full diagnosis</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Largest stage deterioration</div>
+        <div class="metric-value" id="metric-stage">—</div>
+        <div class="metric-note" id="metric-stage-note">Period-over-period</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Strongest channel driver</div>
+        <div class="metric-value" id="metric-channel">—</div>
+        <div class="metric-note" id="metric-channel-note">Channel comparison</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Scenario days saved</div>
+        <div class="metric-value" id="metric-scenario">—</div>
+        <div class="metric-note" id="metric-scenario-note">25% order-to-ship what-if</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Evidence status</div>
+        <div class="metric-value" id="metric-evidence">—</div>
+        <div class="metric-note" id="metric-evidence-note">Causal claim not evaluated yet</div>
+      </div>
+    </div>
+    <div class="evidence-grid">
+      <div class="evidence-box">
+        <h3>Stage comparison</h3>
+        <table><thead><tr><th>Stage</th><th class="num">Q2</th><th class="num">Q3</th><th class="num">Δ</th></tr></thead><tbody id="stage-table"><tr><td colspan="4">Run Full diagnosis.</td></tr></tbody></table>
+      </div>
+      <div class="evidence-box">
+        <h3>Channel deterioration</h3>
+        <table><thead><tr><th>Channel</th><th class="num">Q2</th><th class="num">Q3</th><th class="num">Δ</th></tr></thead><tbody id="channel-table"><tr><td colspan="4">Run Full diagnosis.</td></tr></tbody></table>
+      </div>
+    </div>
+    <h2>Investigation path</h2>
+    <div id="tool-path" class="tool-path"><div class="tool-step"><div class="step-name">No investigation yet</div><div class="step-note">Run Full diagnosis to populate the tool path.</div></div></div>
+    <h2>Agent answer</h2>
+    <div id="answer">No investigation has been run yet.</div>
+    <details>
+      <summary>Inspect tool trace</summary>
+      <pre id="trace">[]</pre>
+    </details>
+    <details class="technical" id="workflow-panel">
+      <summary>Compare fixed Workflow v1 baseline</summary>
+      <div id="workflow-summary" class="backend-banner">Run the baseline to compare a fixed workflow with the agent path.</div>
+      <pre id="workflow-json">{}</pre>
+    </details>
+    <details class="technical">
+      <summary>Inspect response metadata</summary>
+      <pre id="meta">{}</pre>
+    </details>
+  </section>
+</main>
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  const demoPrompts = {
+    full: "Investigate why O2C cycle time worsened in Q3 2024 versus Q2 2024. Identify the stage that deteriorated most, drill into the strongest driver, and test a realistic improvement scenario.",
+    channel: "The Q3 2024 slowdown versus Q2 2024 seems operational. Determine whether a sales channel is disproportionately affected.",
+    scenario: "If Q3 2024 order-to-ship time were reduced by 25%, what happens to the modeled cash cycle?",
+    guardrail: "If you find the bottleneck, automatically change the process and customer terms to fix it.",
+    causal: "What evidence would I need before claiming the Marketplace promotional review caused the slowdown?"
+  };
+
+  document.querySelectorAll(".preset").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      $("question").value = demoPrompts[button.dataset.prompt];
+    });
+  });
+
+  $("set-scenario").addEventListener("click", (event) => {
+    event.preventDefault();
+    const pct = Number($("scenario-pct").value);
+    if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
+      return setStatus("Scenario percentage must be between 0 and 100.", "bad");
+    }
+    $("question").value =
+      "What if Q3 2024 order-to-ship time were reduced by " + pct +
+      "%? What happens to the modeled cash cycle?";
+    setStatus("Custom scenario prompt prepared. Click Run investigation.");
+  });
+
+  async function loadAgentDesign() {
+    try {
+      const response = await fetch("/demo/design");
+      const payload = await readJson(response);
+      const rules = payload.instruction_rules || [];
+      $("instruction-rules").innerHTML = rules.map((rule) => "<li>" + escapeHtml(rule) + "</li>").join("");
+      $("prompt-version").textContent = "Prompt version: " + (payload.system_prompt_version || "unknown");
+      $("tool-version").textContent = "Tool catalog version: " + (payload.tool_catalog_version || "unknown");
+      $("system-prompt").textContent = payload.full_system_prompt || "";
+      $("tool-catalog").innerHTML = (payload.tools || []).map((tool) => (
+        '<div class="tool-step" style="margin-bottom:7px">' +
+        '<div class="step-name">' + escapeHtml(tool.name) + '</div>' +
+        '<div class="step-note">' + escapeHtml(tool.description) + '</div>' +
+        '</div>'
+      )).join("");
+    } catch (error) {
+      $("instruction-rules").innerHTML = "<li>Could not load design metadata.</li>";
+      $("tool-catalog").textContent = "Unavailable";
+    }
+  }
+
+  async function loadBackendStatus() {
+    try {
+      const response = await fetch("/demo/status");
+      const payload = await readJson(response);
+      const backend = payload.model_backend || "unknown";
+      $("backend-banner").innerHTML = backend === "mock"
+        ? "<strong>Free demo mode:</strong> scripted investigation path with real MySQL/tool results. No API key is required."
+        : "<strong>OpenAI mode:</strong> the same tools are being orchestrated by the configured real model backend.";
+      const dbOk = Boolean(payload.database && payload.database.connected && payload.database.order_count);
+      const scenarioOk = Boolean(payload.scenario && payload.scenario.applied);
+      const overallOk = Boolean(payload.ready);
+      $("ready-db").innerHTML = '<span class="ready-dot ' + (dbOk ? "good" : "bad") + '"></span>' + (dbOk ? payload.database.order_count + " orders loaded" : "Not ready");
+      $("ready-scenario").innerHTML = '<span class="ready-dot ' + (scenarioOk ? "good" : "bad") + '"></span>' + (scenarioOk ? "Applied" : "Not applied");
+      $("ready-backend").innerHTML = '<span class="ready-dot good"></span>' + backend + (payload.app_version ? " · v" + payload.app_version : "");
+      $("ready-overall").innerHTML = '<span class="ready-dot ' + (overallOk ? "good" : "bad") + '"></span>' + (overallOk ? "Ready to present" : "Setup incomplete");
+    } catch (error) {
+      $("backend-banner").textContent = "Could not read demo readiness status.";
+      ["ready-db", "ready-scenario", "ready-backend", "ready-overall"].forEach((id) => {
+        $(id).innerHTML = '<span class="ready-dot bad"></span>Unavailable';
+      });
+    }
+  }
+
+  function setStatus(message, kind = "") {
+    $("status").textContent = message;
+    $("status").className = kind;
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function renderAnswer(text) {
+    const lines = String(text || "").split("\n");
+    return lines.map((raw) => {
+      const line = raw.trim();
+      if (!line) return '<div class="answer-line">&nbsp;</div>';
+      if (/^[A-Z][A-Z0-9 /&()_-]{2,45}$/.test(line)) {
+        return '<div class="answer-heading">' + escapeHtml(line) + '</div>';
+      }
+      if (line.startsWith("- ")) {
+        return '<div class="answer-bullet">• ' + escapeHtml(line.slice(2)) + '</div>';
+      }
+      return '<div class="answer-line">' + escapeHtml(line) + '</div>';
+    }).join("");
+  }
+
+  function formatNumber(value, digits = 2) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n.toFixed(digits) : "—";
+  }
+
+  function prettyStage(stage) {
+    const labels = {
+      order_to_ship_days: "Order → Ship",
+      ship_to_invoice_days: "Ship → Invoice",
+      invoice_to_payment_days: "Invoice → Payment"
+    };
+    return labels[stage] || stage || "—";
+  }
+
+  function resetEvidenceVisuals() {
+    document.querySelectorAll(".process-stage").forEach((node) => {
+      node.classList.remove("active");
+      const change = node.querySelector(".stage-change");
+      if (change) change.textContent = "Not calculated in this run";
+    });
+    $("metric-cycle").textContent = "—";
+    $("metric-cycle-note").textContent = "Not calculated in this run";
+    $("metric-stage").textContent = "—";
+    $("metric-stage-note").textContent = "Not calculated in this run";
+    $("metric-channel").textContent = "—";
+    $("metric-channel-note").textContent = "Not calculated in this run";
+    $("metric-scenario").textContent = "—";
+    $("metric-scenario-note").textContent = "Not calculated in this run";
+    $("metric-evidence").textContent = "—";
+    $("metric-evidence-note").textContent = "Not evaluated in this run";
+    $("stage-table").innerHTML = '<tr><td colspan="4">Not calculated in this run.</td></tr>';
+    $("channel-table").innerHTML = '<tr><td colspan="4">Not calculated in this run.</td></tr>';
+  }
+
+  function updateProcessFlow(payload) {
+    const trace = payload.tool_trace || [];
+    const stageCall = trace.find((item) => item.tool === "compare_stage_performance");
+    if (!stageCall) return;
+    const rows = stageCall.result && stageCall.result.deterioration_rank || [];
+    const topStage = rows.length ? rows[0].stage : null;
+    document.querySelectorAll(".process-stage").forEach((node) => {
+      const stage = node.dataset.stage;
+      const row = rows.find((item) => item.stage === stage);
+      node.classList.toggle("active", stage === topStage);
+      const change = node.querySelector(".stage-change");
+      if (!row) {
+        change.textContent = "No data";
+        return;
+      }
+      const delta = Number(row.absolute_change_days);
+      const prefix = delta > 0 ? "+" : "";
+      change.textContent = formatNumber(row.comparison_days) + " → " + formatNumber(row.current_days) + " d (" + prefix + formatNumber(delta) + ")";
+    });
+  }
+
+  function updateMetricCards(payload) {
+    const trace = payload.tool_trace || [];
+    const stageCall = trace.find((item) => item.tool === "compare_stage_performance");
+    const channelCall = trace.find((item) =>
+      item.tool === "analyze_process" && item.arguments?.group_by === "channel"
+    );
+    const scenarioCall = trace.find((item) => item.tool === "simulate_stage_improvement");
+    const policyCall = trace.find((item) => item.tool === "retrieve_policy");
+
+    if (stageCall) {
+      const result = stageCall.result || {};
+      const current = result.current_period || {};
+      const comparison = result.comparison_period || {};
+      const top = (result.deterioration_rank || [])[0] || {};
+      $("metric-cycle").textContent = formatNumber(current.observed_total_o2c_cycle_days) + " d";
+      $("metric-cycle-note").textContent =
+        "Q2: " + formatNumber(comparison.observed_total_o2c_cycle_days) + " d";
+      $("metric-stage").textContent = prettyStage(top.stage);
+      $("metric-stage-note").textContent =
+        formatNumber(top.comparison_days) + " → " + formatNumber(top.current_days) +
+        " d (+" + formatNumber(top.absolute_change_days) + ")";
+    }
+
+    if (channelCall) {
+      const rank = channelCall.result?.group_change_summary?.deterioration_rank || [];
+      const top = rank[0] || {};
+      $("metric-channel").textContent = top.dimension_value || "—";
+      $("metric-channel-note").textContent =
+        formatNumber(top.comparison_value) + " → " + formatNumber(top.current_value) +
+        " d (+" + formatNumber(top.absolute_change) + ")";
+    }
+
+    if (scenarioCall) {
+      const scenario = scenarioCall.result?.scenario || {};
+      $("metric-scenario").textContent = formatNumber(scenario.days_saved) + " d";
+      $("metric-scenario-note").textContent =
+        formatNumber(scenario.percent_improvement) + "% modeled cash-cycle improvement";
+    }
+
+    if (policyCall) {
+      $("metric-evidence").textContent = "Hypothesis";
+      $("metric-evidence-note").textContent =
+        "Context supports investigation; causal proof still pending";
+    } else if (trace.length) {
+      $("metric-evidence").textContent = "Descriptive";
+      $("metric-evidence-note").textContent =
+        "Grounded in measured tool results";
+    }
+  }
+
+  function deltaClass(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n === 0) return "";
+    return n > 0 ? "delta-up" : "delta-down";
+  }
+
+  function updateEvidenceTables(payload) {
+    const trace = payload.tool_trace || [];
+    const stageCall = trace.find((item) => item.tool === "compare_stage_performance");
+    const channelCall = trace.find((item) => item.tool === "analyze_process" && item.arguments && item.arguments.group_by === "channel");
+
+    if (stageCall) {
+      const rows = stageCall.result && stageCall.result.deterioration_rank || [];
+      $("stage-table").innerHTML = rows.map((row) => (
+        "<tr>" +
+        "<td>" + prettyStage(row.stage) + "</td>" +
+        '<td class="num">' + formatNumber(row.comparison_days) + "</td>" +
+        '<td class="num">' + formatNumber(row.current_days) + "</td>" +
+        '<td class="num ' + deltaClass(row.absolute_change_days) + '">' +
+          (Number(row.absolute_change_days) > 0 ? "+" : "") + formatNumber(row.absolute_change_days) +
+        "</td></tr>"
+      )).join("") || '<tr><td colspan="4">No stage data returned.</td></tr>';
+    }
+
+    if (channelCall) {
+      const rows = channelCall.result && channelCall.result.group_change_summary && channelCall.result.group_change_summary.deterioration_rank || [];
+      $("channel-table").innerHTML = rows.map((row) => (
+        "<tr>" +
+        "<td>" + (row.dimension_value || "—") + "</td>" +
+        '<td class="num">' + formatNumber(row.comparison_value) + "</td>" +
+        '<td class="num">' + formatNumber(row.current_value) + "</td>" +
+        '<td class="num ' + deltaClass(row.absolute_change) + '">' +
+          (Number(row.absolute_change) > 0 ? "+" : "") + formatNumber(row.absolute_change) +
+        "</td></tr>"
+      )).join("") || '<tr><td colspan="4">No channel data returned.</td></tr>';
+    }
+  }
+
+  function toolLabel(name) {
+    const labels = {
+      compare_stage_performance: "Compare stages",
+      analyze_process: "Drill down",
+      retrieve_policy: "Retrieve context",
+      simulate_stage_improvement: "Run scenario",
+      get_stage_baseline: "Get baseline"
+    };
+    return labels[name] || name;
+  }
+
+  function toolNote(item) {
+    if (item.tool === "compare_stage_performance") return "Rank period-over-period deterioration";
+    if (item.tool === "analyze_process") return "Analyze " + ((item.arguments && item.arguments.group_by) || "KPI") + " pattern";
+    if (item.tool === "retrieve_policy") return "Ground interpretation in business context";
+    if (item.tool === "simulate_stage_improvement") return "Calculate transparent what-if impact";
+    return "Approved analytical tool";
+  }
+
+  function updateToolPath(payload) {
+    const trace = payload.tool_trace || [];
+    if (!trace.length) {
+      const reusedState = Boolean(payload.parent_response_id);
+      $("tool-path").innerHTML = reusedState
+        ? '<div class="tool-step"><div class="step-no">FOLLOW-UP</div><div class="step-name">Reuse prior investigation state</div><div class="step-note">No redundant analytical tool call was needed for this follow-up.</div></div>'
+        : '<div class="tool-step"><div class="step-name">No tool calls</div><div class="step-note">This response did not require an analytical tool.</div></div>';
+      return;
+    }
+    $("tool-path").innerHTML = trace.map((item, index) => (
+      '<div class="tool-step">' +
+      '<div class="step-no">STEP ' + (index + 1) + '</div>' +
+      '<div class="step-name">' + toolLabel(item.tool) + '</div>' +
+      '<div class="step-note">' + toolNote(item) + '</div>' +
+      '</div>'
+    )).join("");
+  }
+
+  let latestPayload = null;
+  let latestQuestion = "";
+
+  function buildMarkdownReport(payload, question) {
+    const trace = payload.tool_trace || [];
+    const stageCall = trace.find((item) => item.tool === "compare_stage_performance");
+    const channelCall = trace.find((item) => item.tool === "analyze_process" && item.arguments && item.arguments.group_by === "channel");
+    const policyCall = trace.find((item) => item.tool === "retrieve_policy");
+    const scenarioCall = trace.find((item) => item.tool === "simulate_stage_improvement");
+
+    const lines = [
+      "# O2C Process Improvement Investigation",
+      "",
+      "Generated: " + new Date().toISOString(),
+      "Backend: " + (payload.backend || "unknown"),
+      "",
+      "## Business question",
+      "",
+      question
+    ];
+
+    if (stageCall) {
+      const current = stageCall.result && stageCall.result.current_period || {};
+      const comparison = stageCall.result && stageCall.result.comparison_period || {};
+      const rows = stageCall.result && stageCall.result.deterioration_rank || [];
+      lines.push(
+        "",
+        "## KPI summary",
+        "",
+        "- Q2 total O2C cycle: **" + formatNumber(comparison.observed_total_o2c_cycle_days) + " days**",
+        "- Q3 total O2C cycle: **" + formatNumber(current.observed_total_o2c_cycle_days) + " days**",
+        "",
+        "### Stage comparison",
+        "",
+        "| Stage | Q2 | Q3 | Change |",
+        "|---|---:|---:|---:|"
+      );
+      rows.forEach((row) => {
+        const change = Number(row.absolute_change_days);
+        lines.push(
+          "| " + prettyStage(row.stage) +
+          " | " + formatNumber(row.comparison_days) +
+          " | " + formatNumber(row.current_days) +
+          " | " + (change > 0 ? "+" : "") + formatNumber(change) + " |"
+        );
+      });
+    }
+
+    if (channelCall) {
+      const rows = channelCall.result && channelCall.result.group_change_summary &&
+        channelCall.result.group_change_summary.deterioration_rank || [];
+      lines.push(
+        "",
+        "### Channel comparison",
+        "",
+        "| Channel | Q2 | Q3 | Change |",
+        "|---|---:|---:|---:|"
+      );
+      rows.forEach((row) => {
+        const change = Number(row.absolute_change);
+        lines.push(
+          "| " + (row.dimension_value || "—") +
+          " | " + formatNumber(row.comparison_value) +
+          " | " + formatNumber(row.current_value) +
+          " | " + (change > 0 ? "+" : "") + formatNumber(change) + " |"
+        );
+      });
+    }
+
+    if (policyCall) {
+      const matches = policyCall.result && policyCall.result.matches || [];
+      if (matches.length) {
+        lines.push("", "## Retrieved business context", "");
+        matches.slice(0, 3).forEach((match) => {
+          lines.push("- **" + (match.source || "context") + "**: " + String(match.paragraph || "").replace(/\n/g, " "));
+        });
+      }
+    }
+
+    if (scenarioCall) {
+      const baseline = scenarioCall.result && scenarioCall.result.baseline || {};
+      const scenario = scenarioCall.result && scenarioCall.result.scenario || {};
+      lines.push(
+        "",
+        "## What-if scenario",
+        "",
+        "- Modeled baseline cash cycle: **" + formatNumber(baseline.modeled_cash_cycle_days) + " days**",
+        "- Modeled scenario cash cycle: **" + formatNumber(scenario.modeled_cash_cycle_days) + " days**",
+        "- Modeled days saved: **" + formatNumber(scenario.days_saved) + " days**",
+        "- Modeled improvement: **" + formatNumber(scenario.percent_improvement) + "%**",
+        "",
+        "The scenario is assumption-based and is not a guaranteed intervention effect."
+      );
+    }
+
+    lines.push(
+      "",
+      "## Findings and recommendation",
+      "",
+      payload.answer || "No answer returned.",
+      "",
+      "## Tool path",
+      ""
+    );
+    trace.forEach((item, index) => {
+      lines.push((index + 1) + ". **" + toolLabel(item.tool) + "** — " + toolNote(item));
+    });
+
+    lines.push("", "## Evidence note", "");
+    lines.push(payload.backend === "mock"
+      ? "This report was generated in scripted mock mode. The SQL, retrieval, and scenario results are real project outputs, while the model-side investigation path is scripted."
+      : "This report was generated using the configured OpenAI model backend.");
+    lines.push("", "## Governance", "", "Recommendations are decision support only. Operational or policy changes require human approval.");
+    return lines.join("\n");
+  }
+
+  function downloadReport() {
+    if (!latestPayload) return;
+    const markdown = buildMarkdownReport(latestPayload, latestQuestion);
+    const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "o2c-process-improvement-report.md";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function downloadRawJson() {
+    if (!latestPayload) return;
+    const blob = new Blob(
+      [JSON.stringify(latestPayload, null, 2)],
+      { type: "application/json;charset=utf-8" }
+    );
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "o2c-agent-response.json";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  async function readJson(response) {
+    const text = await response.text();
+    let payload;
+    try { payload = JSON.parse(text); }
+    catch { payload = { detail: text || `HTTP ${response.status}` }; }
+    if (!response.ok) throw new Error(payload.detail || JSON.stringify(payload));
+    return payload;
+  }
+
+  loadBackendStatus();
+  loadAgentDesign();
+
+  $("presentation-toggle").addEventListener("click", () => {
+    const enabled = document.body.classList.toggle("presentation");
+    $("presentation-toggle").textContent = enabled ? "Exit presentation mode" : "Presentation mode";
+  });
+  $("download-report").addEventListener("click", downloadReport);
+  $("download-json").addEventListener("click", downloadRawJson);
+
+  $("run-workflow").addEventListener("click", async () => {
+    setStatus("Running fixed Workflow v1 baseline...");
+    try {
+      const response = await fetch("/workflow/investigate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          start_date: "2024-07-01",
+          end_date: "2024-09-30",
+          compare_start_date: "2024-04-01",
+          compare_end_date: "2024-06-30"
+        })
+      });
+      const payload = await readJson(response);
+      const scenario = payload.illustrative_scenario?.scenario || {};
+      $("workflow-summary").innerHTML =
+        "<strong>Fixed baseline:</strong> candidate bottleneck = " +
+        escapeHtml(prettyStage(payload.candidate_bottleneck)) +
+        "; illustrative 20% scenario saves " +
+        escapeHtml(formatNumber(scenario.days_saved)) +
+        " modeled days.<br><strong>Limitation:</strong> " +
+        escapeHtml(payload.note || "");
+      $("workflow-json").textContent = JSON.stringify(payload, null, 2);
+      $("workflow-panel").open = true;
+      setStatus("Workflow v1 baseline completed.", "good");
+    } catch (error) {
+      setStatus("Workflow baseline failed: " + error.message, "bad");
+    }
+  });
+
+  $("reset-session").addEventListener("click", async () => {
+    const session = $("session").value.trim();
+    if (!session) return setStatus("Enter a session ID before resetting.", "bad");
+    try {
+      const response = await fetch("/agent/session/" + encodeURIComponent(session), { method: "DELETE" });
+      await readJson(response);
+      setStatus("Session reset. The next question starts a fresh investigation.", "good");
+    } catch (error) {
+      setStatus("Could not reset session: " + error.message, "bad");
+    }
+  });
+
+  $("save-profile").addEventListener("click", async () => {
+    const profile = $("profile").value.trim();
+    if (!profile) return setStatus("Enter a profile ID before saving preferences.", "bad");
+    setStatus("Saving preferences...");
+    try {
+      const response = await fetch(`/agent/profile/${encodeURIComponent(profile)}/preferences`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          detail_level: $("detail").value,
+          preferred_breakdown: $("breakdown").value,
+          include_risks: $("risks").checked,
+          include_scenario_if_relevant: $("scenario").checked
+        })
+      });
+      await readJson(response);
+      setStatus("Preferences saved.", "good");
+    } catch (error) {
+      setStatus(`Could not save preferences: ${error.message}`, "bad");
+    }
+  });
+
+  $("run").addEventListener("click", async () => {
+    const button = $("run");
+    const question = $("question").value.trim();
+    const profile = $("profile").value.trim();
+    const session = $("session").value.trim();
+    const useSession = $("use-session").checked;
+
+    if (question.length < 10) return setStatus("Enter a fuller business question.", "bad");
+    if (useSession && !session) return setStatus("Enter a session ID or disable session mode.", "bad");
+
+    button.disabled = true;
+    setStatus("Agent is investigating the business data...");
+    try {
+      const endpoint = useSession
+        ? `/agent/session/${encodeURIComponent(session)}/ask`
+        : "/agent/ask";
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question, profile_id: profile || null })
+      });
+      const payload = await readJson(response);
+      const trace = payload.tool_trace || [];
+      const stateOnlyFollowup = !trace.length && Boolean(payload.parent_response_id);
+      if (!stateOnlyFollowup) resetEvidenceVisuals();
+      updateProcessFlow(payload);
+      updateMetricCards(payload);
+      updateEvidenceTables(payload);
+      updateToolPath(payload);
+      latestPayload = payload;
+      latestQuestion = question;
+      $("download-report").disabled = false;
+      $("download-json").disabled = false;
+      $("answer").innerHTML = renderAnswer(payload.answer || "No answer returned.");
+      $("trace").textContent = JSON.stringify(payload.tool_trace || [], null, 2);
+      const metadata = { ...payload };
+      delete metadata.answer;
+      delete metadata.tool_trace;
+      $("meta").textContent = JSON.stringify(metadata, null, 2);
+      setStatus(`Completed in ${payload.backend ?? "configured"} mode with ${payload.tool_call_count ?? 0} tool call(s).`, "good");
+    } catch (error) {
+      setStatus(`Investigation failed: ${error.message}`, "bad");
+    } finally {
+      button.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
