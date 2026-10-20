@@ -147,7 +147,10 @@ fi
 
 echo
 echo "Demo is ready."
-echo "Open: http://localhost:8000/"
+echo "Local URL: http://localhost:8000/"
+if [[ -n "${CODESPACE_NAME:-}" && -n "${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-}" ]]; then
+  echo "Codespaces URL: https://${CODESPACE_NAME}-8000.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}/"
+fi
 echo
 echo "Recommended first action:"
 echo "Click 'Full diagnosis' and then 'Run investigation'."
