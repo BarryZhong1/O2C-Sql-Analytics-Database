@@ -40,6 +40,24 @@ This branch extends the SQL project into a deployable business-analysis agent wi
 
 ### Zero-cost portfolio demo
 
+#### One-click GitHub Codespaces — full FastAPI + MySQL application
+
+[Open the full demo in GitHub Codespaces](https://codespaces.new/BarryZhong1/O2C-Sql-Analytics-Database?ref=feature/process-improvement-agent)
+
+The Codespace automatically provisions Docker/Python, loads Scenario V1, starts MySQL + FastAPI, forwards port 8000, and opens the analyst UI. No OpenAI API key is required in the default mock mode.
+
+#### GitHub Pages — public static portfolio preview
+
+The repository also includes a standalone static UI in `site/` and a GitHub Pages deployment workflow. After merge and one-time Pages enablement, the expected public URL is:
+
+```text
+https://barryzhong1.github.io/O2C-Sql-Analytics-Database/
+```
+
+The Pages version is intentionally a static Scenario V1 preview; use Codespaces or local Docker for the live database/tool-trace application.
+
+#### Local Docker
+
 Requirements: Docker Desktop / Docker Compose v2.
 
 Fast path on macOS/Linux:
@@ -96,7 +114,7 @@ flowchart LR
 
 The free demo uses a scripted mock only at the model/orchestration boundary. The same business tools remain available to the optional OpenAI Responses API backend.
 
-See [Agent README](agent/README.md), [User & Mechanics Manual](agent/docs/user_manual.md), [Documentation Index](agent/docs/README.md), [Demo Quick Start](agent/docs/demo_quickstart.md), [Prompt & Tool Design](agent/docs/prompt_design.md), [Business Requirements](agent/docs/business_requirements.md), [Process Improvement Case](agent/docs/process_improvement_case.md), and [Demo Interview Q&A](agent/docs/demo_interview_qa.md).
+See [Agent README](agent/README.md), [User & Mechanics Manual](agent/docs/user_manual.md), [GitHub Deployment Guide](agent/docs/github_deployment.md), [Documentation Index](agent/docs/README.md), [Demo Quick Start](agent/docs/demo_quickstart.md), [Prompt & Tool Design](agent/docs/prompt_design.md), [Business Requirements](agent/docs/business_requirements.md), [Process Improvement Case](agent/docs/process_improvement_case.md), and [Demo Interview Q&A](agent/docs/demo_interview_qa.md).
 
 ### Validated demo evidence
 
