@@ -50,16 +50,7 @@ jobs:
         run: |
           devcontainer exec --workspace-folder . bash -lc '
             curl --fail --silent http://localhost:8000/demo/status > /tmp/status.json
-            python3 - <<'"'"'PY'"'"'
-import json
-p=json.load(open("/tmp/status.json"))
-assert p["ready"] is True, p
-assert p["model_backend"] == "mock", p
-assert p["app_version"] == "0.5.0", p
-assert p["database"]["order_count"] > 0, p
-assert p["scenario"]["applied"] is True, p
-print(p)
-PY
+            python3 -c "import json; p=json.load(open('/tmp/status.json')); assert p['ready'] is True, p; assert p['model_backend']=='mock', p; assert p['app_version']=='0.5.0', p; assert p['database']['order_count']>0, p; assert p['scenario']['applied'] is True, p; print(p)"
           '
 
       - name: Verify main agent investigation inside devcontainer
