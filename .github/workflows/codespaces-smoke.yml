@@ -50,12 +50,30 @@ jobs:
             --log-level info \
             | tee /tmp/devcontainer-up.json
 
-      - name: Verify Docker inside devcontainer
+      - name: Verify workspace and Docker inside devcontainer
         run: |
           devcontainer exec --workspace-folder . bash -lc '
+            test "$PWD" = "/workspaces/O2C-Sql-Analytics-Database"
+            test -f README.md
+            test -f agent/app/main.py
             docker info >/dev/null
             docker compose version
             docker compose ps
+          '
+
+      - name: Verify published UI port from devcontainer
+        run: |
+          devcontainer exec --workspace-folder . bash -lc '
+            python3 - <<'"'"'PY'"'"'
+import json, urllib.request
+payload = json.loads(
+    urllib.request.urlopen("http://127.0.0.1:8000/demo/status", timeout=10)
+    .read()
+    .decode()
+)
+assert payload["ready"] is True, payload
+print(payload)
+PY
           '
 
       - name: Verify full demo readiness inside devcontainer
