@@ -270,6 +270,41 @@ If startup fails or never begins, retry manually:
 bash .devcontainer/start-background.sh
 ```
 
+## Browser returns HTTP 502 at the forwarded port
+
+The Docker Compose API runs in a sibling container through Docker-outside-of-Docker.
+A healthy `agent` container does not necessarily imply port 8000 is reachable
+from the Codespaces workspace. The devcontainer therefore starts a small
+standard-library HTTP bridge at port 8000 **inside the workspace** before
+building MySQL and the API. It shows a temporary startup page while the backend
+initializes and forwards requests to FastAPI as soon as it responds.
+
+In an **existing** Codespace, apply the latest code then restart the launcher:
+
+```bash
+git pull --ff-only origin main
+bash .devcontainer/start-background.sh
+bash .devcontainer/wait-for-demo.sh 600
+```
+
+Then open port 8000 from the Ports tab. No new Codespace is normally needed.
+
+For diagnostics:
+
+```bash
+curl -i http://127.0.0.1:8000/_codespace_bridge_probe
+curl -i http://127.0.0.1:8000/health
+docker compose ps
+tail -n 80 "$HOME/.local/state/o2c-demo/bootstrap.log"
+tail -n 40 "$HOME/.local/state/o2c-demo/port-bridge.log"
+```
+
+A response of `{"bridge":"ok"}` confirms the workspace listener is running;
+`/health` returning `{"status":"ok"...}` confirms that requests are reaching
+the real agent backend. If both local checks succeed but the forwarded
+`*.app.github.dev` URL still returns 502, remove and add port 8000 in the
+Ports tab to refresh a potentially stale forwarding entry.
+
 ## The UI does not open
 
 Open the **Ports** panel and look for port 8000. It may take several minutes
