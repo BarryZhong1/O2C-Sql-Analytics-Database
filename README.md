@@ -40,6 +40,8 @@ This branch extends the SQL project into a deployable business-analysis agent wi
 
 ### Zero-cost portfolio demo
 
+**New: guided sample.** Open [the step-by-step agent walkthrough](site/walkthrough.html) to replay a documented Q2→Q3 diagnosis one tool at a time. In a running Codespace, use **Guided sample →** on the analyst UI, or navigate to `/demo/walkthrough`. The walkthrough replays Scenario V1 benchmark values and is clearly distinguished from live tool execution.
+
 #### One-click GitHub Codespaces — full FastAPI + MySQL application
 
 [Open the full demo in GitHub Codespaces](https://codespaces.new/BarryZhong1/O2C-Sql-Analytics-Database/tree/main)
