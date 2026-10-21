@@ -24,6 +24,7 @@ from app.workflow import investigate_cycle_time
 
 
 UI_PATH = Path(__file__).with_name("static") / "index.html"
+WALKTHROUGH_PATH = UI_PATH.with_name("walkthrough.html")
 APP_VERSION = "0.5.0"
 
 app = FastAPI(
@@ -78,6 +79,14 @@ def analyst_ui() -> HTMLResponse:
     if not UI_PATH.exists():
         raise HTTPException(status_code=404, detail="analyst UI not found")
     return HTMLResponse(UI_PATH.read_text(encoding="utf-8"))
+
+
+@app.get("/demo/walkthrough", response_class=HTMLResponse)
+def guided_walkthrough() -> HTMLResponse:
+    """Static recorded Scenario V1 trace for user education; no live SQL/model calls."""
+    if not WALKTHROUGH_PATH.exists():
+        raise HTTPException(status_code=404, detail="guided walkthrough not found")
+    return HTMLResponse(WALKTHROUGH_PATH.read_text(encoding="utf-8"))
 
 
 @app.get("/health")
