@@ -13,7 +13,7 @@
   "portsAttributes": {
     "8000": {
       "label": "O2C Process Improvement Agent",
-      "onAutoForward": "openBrowser",
+      "onAutoForward": "notify",
       "protocol": "http"
     }
   },
