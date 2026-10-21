@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guided Agent Investigation — O2C Process Improvement</title>
+<style>
+:root{color-scheme:dark;--bg:#091321;--panel:#101e31;--panel2:#14273d;--line:#30465e;--text:#eaf2fa;--muted:#b0c0d0;--blue:#7dd3fc;--green:#86efac;--amber:#fcd34d;--red:#fda4af}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 100% 0%,#15344a 0%,var(--bg) 45%);font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--text)}
+main{max-width:1100px;margin:auto;padding:26px 20px 72px}a{color:var(--blue)}h1{font-size:clamp(28px,4.3vw,44px);line-height:1.15;margin:12px 0}h2{font-size:20px;margin:0 0 12px}h3{font-size:16px;margin:2px 0 8px}.muted{color:var(--muted)}.eyebrow{color:var(--blue);letter-spacing:.12em;font-size:12px;font-weight:800;text-transform:uppercase}.hero{margin:14px 0 20px}.hero p{max-width:800px}.tag{display:inline-block;border:1px solid #2f5969;background:#122d3a;padding:4px 9px;border-radius:999px;font-size:12px;margin:4px 7px 4px 0;color:#b5ebfd}.layout{display:grid;grid-template-columns:310px 1fr;gap:16px;align-items:start}.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 12px 36px #0002}.notice{background:#20324b;border-left:3px solid var(--blue);padding:12px 14px;border-radius:8px;color:#d4e5f4;font-size:13px;margin:16px 0}.prompt{background:#0b1929;padding:16px;border-radius:10px;border:1px solid var(--line);font-size:15px;font-weight:600}.steps{display:grid;gap:7px;margin-top:14px}.step{width:100%;text-align:left;padding:12px;border-radius:10px;border:1px solid var(--line);background:#102237;color:var(--text);font:inherit;cursor:pointer}.step .number{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;background:#243c55;border-radius:50%;margin-right:8px;font-size:12px;font-weight:800}.step small{display:block;color:var(--muted);padding-left:35px;margin-top:3px}.step.current{border-color:var(--blue);background:#18364a}.step.current .number{background:var(--blue);color:#042239}.step.done .number{background:#1e5445;color:var(--green)}.bar{height:7px;border-radius:99px;background:#26364b;overflow:hidden}.bar span{display:block;height:100%;width:0;background:var(--blue);transition:width .2s}.subhead{color:var(--blue);font-size:12px;letter-spacing:.06em;font-weight:800;text-transform:uppercase}.pill{display:inline-block;border:1px solid var(--line);border-radius:7px;padding:3px 7px;font-size:12px;color:var(--muted);margin:0 5px 8px 0}.evidence{margin:15px 0;padding:13px 15px;border-radius:10px;background:var(--panel2);border:1px solid var(--line)}.evidence p:last-child{margin-bottom:0}.evidence strong{color:#f3f8ff}.evidence.warn{border-color:#94713a}.evidence.good{border-color:#36785c}table{border-collapse:collapse;width:100%;font-size:13px;margin:12px 0 18px}th,td{padding:10px 7px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--muted);font-size:12px}th.num,td.num{text-align:right}tr.important td{color:var(--amber);font-weight:800}.up{color:var(--red)}.down{color:var(--green)}pre{background:#081422;color:#bfd9ec;border-radius:10px;padding:14px;overflow:auto;font-size:12px;border:1px solid var(--line);white-space:pre-wrap;overflow-wrap:anywhere}.two{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.metric{background:#0c2032;border:1px solid var(--line);border-radius:10px;padding:14px}.metric strong{display:block;font-size:26px;color:var(--text)}.metric small{display:block;color:var(--muted)}.controls{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0 0}.btn{background:#0284c7;color:white;border:1px solid #38bdf8;border-radius:10px;padding:10px 15px;font-size:14px;font-weight:800;cursor:pointer}.btn:disabled{opacity:.35;cursor:not-allowed}.btn.secondary{background:#1b2e46;color:var(--text);border-color:#456078}.range{width:100%;accent-color:#38bdf8;cursor:pointer}.scenario-head{display:flex;justify-content:space-between;gap:10px;align-items:center}.value{font-size:24px;font-weight:800;color:var(--blue)}.report-section{margin:13px 0}.report-section b{color:var(--blue)}.report-section p{margin:5px 0}.report-list{padding-left:20px;margin:8px 0}.foot{font-size:13px;color:var(--muted);margin-top:18px}.live-link{font-size:13px;font-weight:700;text-decoration:none;display:inline-block;padding:8px 12px;border:1px solid var(--line);border-radius:9px}.nav{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:9px}.stage-flow{display:flex;gap:6px;align-items:stretch;margin:14px 0}.flow-part{flex:1;border:1px solid var(--line);padding:9px;border-radius:9px;text-align:center;font-size:12px;background:#102339}.flow-part.hot{border-color:var(--amber);color:var(--amber)}.arrow{align-self:center;color:var(--muted)}@media(max-width:800px){.layout,.two{grid-template-columns:1fr}.stage-flow{flex-wrap:wrap}.flow-part{min-width:95px}main{padding:20px 12px 60px}.card{padding:15px}}
+</style>
+</head>
+<body>
+<main>
+  <header class="nav"><div class="eyebrow">O2C Process Improvement Agent</div><a class="live-link" id="live-link" href="/">Open full analyst UI ↗</a></header>
+  <div class="hero">
+    <h1>How an agent investigates a business problem</h1>
+    <p class="muted">Click through a recorded Scenario V1 example: user question → tool selection → evidence → modeled improvement → decision-ready recommendation.</p>
+    <span class="tag">Guided interactive example</span><span class="tag">Verified Scenario V1 numbers</span><span class="tag">No API key needed</span>
+    <div class="notice"><b>How this sample works:</b> this page replays a <b>documented mock-mode investigation</b>; it does not make live SQL/model calls. In the full analyst UI, the same approved tools run against MySQL/Python and the tool trace is inspectable. Mock mode scripts the tool sequence; optional OpenAI mode enables model-selected calls.</div>
+  </div>
+  <div class="layout">
+    <aside class="card">
+      <h2>Investigation timeline</h2>
+      <div class="bar" aria-hidden="true"><span id="bar-fill"></span></div>
+      <div class="steps" id="step-nav">
+        <button class="step current" data-step="0"><span class="number">0</span>Business question<small>Ask in plain English</small></button>
+        <button class="step" data-step="1"><span class="number">1</span>Compare stages<small>SQL: compare_stage_performance</small></button>
+        <button class="step" data-step="2"><span class="number">2</span>Drill into channels<small>SQL: analyze_process</small></button>
+        <button class="step" data-step="3"><span class="number">3</span>Retrieve context<small>Search: retrieve_policy</small></button>
+        <button class="step" data-step="4"><span class="number">4</span>Test a scenario<small>Python: simulate_stage_improvement</small></button>
+        <button class="step" data-step="5"><span class="number">5</span>Business recommendation<small>Finding → pilot → decision gate</small></button>
+      </div>
+      <div class="controls">
+        <button class="btn secondary" id="back">← Back</button>
+        <button class="btn" id="next">Next step →</button>
+      </div>
+    </aside>
+    <section class="card" aria-live="polite">
+      <div class="subhead" id="phase">Before execution</div>
+      <h2 id="step-title">Start with a business question</h2>
+      <div id="detail"></div>
+      <div class="foot" id="step-count">Step 0 of 5</div>
+    </section>
+  </div>
+</main>
+<script>
+(function(){
+  "use strict";
+  var current=0,pct=25;
+  var titles=["Start with a business question","Compare process stages","Investigate channel concentration","Retrieve business-process context","Model the improvement scenario","Produce an actionable recommendation"];
+  var phases=["USER INPUT","TOOL CALL 1 / 4","TOOL CALL 2 / 4","TOOL CALL 3 / 4","TOOL CALL 4 / 4","FINAL AGENT OUTPUT"];
+  var prompt="Investigate why O2C cycle time worsened in Q3 2024 versus Q2 2024. Identify the stage that deteriorated most, drill into the strongest driver, and test a realistic improvement scenario.";
+  var $=function(id){return document.getElementById(id);};
+  function n(value){return Number(value).toFixed(2);}
+  function scenario(){var saved=2.09*pct/100;return {saved:saved,cycle:33.58-saved,improvement:saved/33.58*100};}
+  function report(){
+    var s=scenario();
+    return "# O2C Process Improvement Agent — Guided Sample\n\n"+
+      "Question: "+prompt+"\n\n"+
+      "## Finding\nQ2 2024 average O2C: 33.28 days; Q3 2024: 33.71 days. Order → Ship worsened from 1.48 to 2.09 days (+0.61 days). Marketplace Order → Ship rose from 1.45 to 4.62 days (+3.17 days).\n\n"+
+      "## Context and uncertainty\nA manual promotional-code review step began for Marketplace orders on July 1, 2024. This is a plausible contributing factor, NOT causal proof. Investigate order mix, timestamps, staffing, queue backlogs, and exceptions.\n\n"+
+      "## Modeled scenario\nAssume "+pct+"% reduction in Q3 Order → Ship time. Modeled cash cycle: 33.58 → "+n(s.cycle)+" days; modeled savings: "+n(s.saved)+" days ("+n(s.improvement)+"%). This is a what-if assumption, not an achieved benefit or causal estimate.\n\n"+
+      "## Recommendation\nPilot pre-validation and exception-based manual review for Marketplace orders. Track Order → Ship time, SLA attainment, rework/exception rate, and total O2C cycle. Compare an affected cohort with a control. Do not roll out without process-owner review and human approval.\n\n"+
+      "## Recorded tool path\n1. compare_stage_performance\n2. analyze_process (order_to_ship_days, grouped by channel)\n3. retrieve_policy\n4. simulate_stage_improvement\n\n"+
+      "Disclosure: Replay of verified Scenario V1 benchmark. This page does not execute live model/SQL calls. The project mock backend scripts the tool-selection path; database queries and Python calculations run in the full application.\n";
+  }
+  function renderDetail(){
+    if(current===0)return '<p>Business stakeholders do not start with SQL. They describe an operational problem and ask for a recommendation.</p><div class="prompt">'+prompt+'</div><div class="stage-flow"><div class="flow-part hot">Order → Ship</div><span class="arrow">→</span><div class="flow-part">Ship → Invoice</div><span class="arrow">→</span><div class="flow-part">Invoice → Payment</div></div><div class="evidence"><b>Agent responsibility:</b> select bounded investigation tools and interpret their results. Data access and numerical calculations stay with approved SQL/Python tools.</div><p class="muted">Click <b>Next step</b> to reveal the first tool call.</p>';
+    if(current===1)return '<p><b>Tool selection:</b> compare stage-level performance first to identify what changed — not simply which stage is longest.</p><span class="pill">Tool: compare_stage_performance</span><span class="pill">Current: Q3 2024</span><span class="pill">Baseline: Q2 2024</span><table><thead><tr><th>Stage</th><th class="num">Q2 (days)</th><th class="num">Q3 (days)</th><th class="num">Change</th></tr></thead><tbody><tr class="important"><td>Order → Ship</td><td class="num">1.48</td><td class="num">2.09</td><td class="num">+0.61</td></tr><tr><td>Ship → Invoice</td><td class="num">1.00</td><td class="num">1.00</td><td class="num">0.00</td></tr><tr><td>Invoice → Payment</td><td class="num">30.76</td><td class="num">30.49</td><td class="num">−0.27</td></tr></tbody></table><div class="two"><div class="metric"><small>Q2 observed O2C</small><strong>33.28 days</strong></div><div class="metric"><small>Q3 observed O2C</small><strong>33.71 days</strong></div></div><div class="evidence good"><strong>Reason to continue:</strong> Order → Ship grew by 0.61 days. Invoice → Payment is much longer in absolute duration, but it actually improved. Next, examine where the Order → Ship increase is concentrated.</div>';
+    if(current===2)return '<p><b>Tool selection:</b> analyze the deteriorating stage by business dimension. The approved SQL layer groups <code>order_to_ship_days</code> by <code>channel</code>.</p><span class="pill">Tool: analyze_process</span><span class="pill">Metric: order_to_ship_days</span><span class="pill">Group: channel</span><table><thead><tr><th>Channel</th><th class="num">Q2 (days)</th><th class="num">Q3 (days)</th><th class="num">Change</th></tr></thead><tbody><tr class="important"><td>Marketplace</td><td class="num">1.45</td><td class="num">4.62</td><td class="num">+3.17</td></tr><tr><td>InsideSales</td><td class="num">1.44</td><td class="num">1.47</td><td class="num">+0.03</td></tr><tr><td>Web</td><td class="num">1.54</td><td class="num">1.54</td><td class="num">0.00</td></tr></tbody></table><div class="evidence good"><strong>Key finding:</strong> the delay is strongly concentrated in Marketplace orders (+3.17 days), while Web is stable. The next step is to look for business-process changes specific to this channel.</div>';
+    if(current===3)return '<p><b>Tool selection:</b> search approved process notes and policy documents for changes associated with Marketplace order release.</p><span class="pill">Tool: retrieve_policy</span><span class="pill">Source: local process-change log</span><div class="evidence"><strong>Retrieved business context:</strong><p>A manual promotional-code review step was introduced for Marketplace orders beginning <b>July 1, 2024</b>.</p></div><div class="evidence warn"><strong>Hypothesis ≠ causal proof.</strong><p>The new step may contribute to the Q3 delay, but concurrent staffing, mix, promotions, exceptions, and other process changes could explain part or all of it.</p></div><p><b>Next question:</b> what would a transparent, hypothetical reduction in Order → Ship time mean for the modeled cash cycle?</p>';
+    if(current===4){var s=scenario();return '<p><b>Tool selection:</b> pass an explicit improvement assumption to the deterministic Python simulator. The model does not invent the arithmetic.</p><span class="pill">Tool: simulate_stage_improvement</span><span class="pill">Affected stage: Order → Ship</span><div class="evidence"><div class="scenario-head"><label for="pct">Assumed Order → Ship reduction</label><span class="value" id="pct-label">'+pct+'%</span></div><input class="range" aria-label="Assumed stage reduction percent" id="pct" type="range" min="0" max="100" step="5" value="'+pct+'"><p class="muted">Move the slider to recalculate this hypothetical scenario.</p></div><div class="two"><div class="metric"><small>Modeled baseline cycle</small><strong>33.58 days</strong></div><div class="metric"><small>Modeled scenario cycle</small><strong id="scenario-cycle">'+n(s.cycle)+' days</strong></div><div class="metric"><small>Modeled days saved</small><strong id="scenario-saved">'+n(s.saved)+' days</strong></div><div class="metric"><small>Modeled improvement</small><strong id="scenario-improve">'+n(s.improvement)+'%</strong></div></div><div class="evidence warn"><strong>Assumption, not forecast:</strong> the '+pct+'% reduction is chosen for planning. No intervention has been deployed or proven. The 33.58-day simulator baseline is a stage-based model and differs from the separately reported observed 33.71-day O2C average.</div>';}
+    var s=scenario();
+    return '<p>The agent turns the evidence package into a structured business response. It does <b>not</b> change operational systems.</p><div class="report-section"><b>FINDING</b><p>Q3 O2C cycle time rose from <strong>33.28</strong> to <strong>33.71 days</strong>. Order → Ship deteriorated most (+0.61 days), especially Marketplace orders (+3.17 days).</p></div><div class="report-section"><b>POSSIBLE DRIVER — NOT PROVEN</b><p>Marketplace manual promotional-code review began July 1. Timing supports a hypothesis; collect review-queue timestamps and compare affected and control orders.</p></div><div class="report-section"><b>WHAT-IF IMPACT</b><p>A <strong>'+pct+'%</strong> assumed Order → Ship reduction changes the modeled cash cycle from <strong>33.58</strong> to <strong>'+n(s.cycle)+' days</strong>, saving <strong>'+n(s.saved)+' days ('+n(s.improvement)+'%)</strong>.</p></div><div class="report-section"><b>RECOMMENDED PILOT</b><ul class="report-list"><li>Pre-validate normal Marketplace orders; reserve manual review for exceptions.</li><li>Track stage duration, on-time shipment, SLA attainment, exceptions/rework, and total O2C.</li><li>Compare affected and unaffected cohorts, with process-owner approval before wider rollout.</li></ul></div><div class="evidence good"><strong>Human decision gate:</strong> recommendation only. The agent does not execute process or customer-term changes.</div><div class="controls"><button class="btn" id="report-download">Download this sample report</button><button class="btn secondary" id="restart">Replay investigation</button></div><p class="foot">Recorded tool path: compare_stage_performance → analyze_process → retrieve_policy → simulate_stage_improvement.</p>';
+  }
+  function render(){
+    $("phase").textContent=phases[current];
+    $("step-title").textContent=titles[current];
+    $("detail").innerHTML=renderDetail();
+    $("step-count").textContent="Step "+current+" of 5 · Guided benchmark replay";
+    $("bar-fill").style.width=(current/5*100)+"%";
+    document.querySelectorAll(".step").forEach(function(b){var i=Number(b.dataset.step);b.classList.toggle("current",i===current);b.classList.toggle("done",i<current);b.setAttribute("aria-current",i===current?"step":"false");});
+    $("back").disabled=current===0;
+    $("next").disabled=current===5;
+    $("next").textContent=current===4?"Show final output →":"Next step →";
+    var slider=$("pct");if(slider)slider.addEventListener("input",function(){pct=Number(slider.value);var s=scenario();$("pct-label").textContent=pct+"%";$("scenario-cycle").textContent=n(s.cycle)+" days";$("scenario-saved").textContent=n(s.saved)+" days";$("scenario-improve").textContent=n(s.improvement)+"%";});
+    var download=$("report-download");if(download)download.addEventListener("click",function(){
+      var blob=new Blob([report()],{type:"text/markdown;charset=utf-8"});
+      var url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="o2c-agent-guided-sample.md";document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},1000);
+    });
+    var restart=$("restart");if(restart)restart.addEventListener("click",function(){current=0;pct=25;render();});
+  }
+  $("next").addEventListener("click",function(){if(current<5){current++;render();}});
+  $("back").addEventListener("click",function(){if(current>0){current--;render();}});
+  document.querySelectorAll(".step").forEach(function(b){b.addEventListener("click",function(){current=Number(b.dataset.step);render();});});
+  if(!location.pathname.startsWith("/demo/")){
+    $("live-link").textContent="Launch live Codespaces demo ↗";
+    $("live-link").href="https://codespaces.new/BarryZhong1/O2C-Sql-Analytics-Database/tree/main";
+  }
+  render();
+}());
+</script>
+</body>
+</html>
