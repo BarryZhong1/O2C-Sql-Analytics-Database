@@ -14,6 +14,11 @@ if [[ ! -f "$ROOT_DIR/docker-compose.yml" || ! -f "$ROOT_DIR/agent/scripts/start
   exit 1
 fi
 
+echo "[codespace] Starting workspace port bridge so browser forwarding has a listener."
+if ! bash "$ROOT_DIR/.devcontainer/start-port-bridge.sh"; then
+  echo "[codespace] Warning: Port bridge not ready. Check $LOG_DIR/port-bridge.log" >&2
+fi
+
 # A Codespace can trigger lifecycle hooks multiple times; flock prevents
 # overlapping runs that might reset each other's database volumes.
 nohup bash -c '
