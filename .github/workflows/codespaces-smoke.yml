@@ -74,7 +74,6 @@ jobs:
       - name: Verify browser-facing workspace port
         run: |
           devcontainer exec --workspace-folder . bash -lc 'curl -fsS --max-time 10 http://127.0.0.1:8000/health > /tmp/bridge-health.json'
-          grep -q 'not-used' /dev/null || true
           devcontainer exec --workspace-folder . bash -lc 'curl -fsS --max-time 10 http://127.0.0.1:8000/ > /tmp/bridge-ui.html && grep -q "O2C Process Improvement Agent" /tmp/bridge-ui.html'
           devcontainer exec --workspace-folder . bash -lc 'curl -fsS --max-time 10 http://127.0.0.1:8000/demo/walkthrough > /tmp/bridge-walkthrough.html && grep -q "How an agent investigates" /tmp/bridge-walkthrough.html'
 
